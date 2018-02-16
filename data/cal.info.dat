@@ -1,0 +1,16 @@
+##################################################
+#   Tref.ASPH       is the temperature of pure water used by Hobilabs for the ASPH calibration
+#                   (in 2010 and 2014 it was 13.2, in 2013 it was 19)
+#   Tref.ACS        is the temperature of pure water used by Wetlabs for the ACS calibration
+#   scat.correction is the method for the scattering correction of ACS abssorption
+#                   (eg : "mckee","zaneveld", "baseline","none")
+#   HS6.CALYEAR     is the year of the HS6 calibration
+#   blank.ASPH      is a string for the path of the blank for ASPH
+#   blank.ACS       is a string for the path of the blank for ACS
+#   blank.BB9       is a string for the path of the blank for BB9
+#   blank.BB3       is a string for the path of the blank for BB3
+#
+#  NOTE: any field can be ommited with out problem
+##################################################
+Tref.ASPH, Tref.ACS, scat.correction, HS6.CALYEAR, blank.ASPH, blank.ACS, blank.BB9, blank.BB3
+13.2, 20.3, "zaneveld", NA, "ASPH.blank.RData", "PurewaterCal.RData", "blank.BB9.RData","blank.BB3.RData"

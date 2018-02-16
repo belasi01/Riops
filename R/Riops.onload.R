@@ -1,0 +1,17 @@
+.onLoad <- function(lib, pkg) {
+  Sys.setenv(TZ = "GMT")
+  Sys.setenv(R_IOPs_DATA_DIR=paste(lib, pkg, "data", sep="/"))
+  cat("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
+  cat("TO BEGIN A PROCESSING, \n")
+  cat("1. Create an ASCII file named directories.for.IOPs.dat \n")
+  cat("   in which the full path of the folder(s) containing the IOPs raw data to process\n")
+  cat("2. Type IOPs.go(report=FALSE)\n")
+  cat("3. Edit the files cast.info.dat, cal.info.dat and instrument.dat to provide  \n")
+  cat("   the adequate parameters for the processing (see header of copied cast.info.dat, cal.info.dat) \n")
+  cat("   (e.g. lat, lon, cast number, calibration file, blank, depth and smoothing intervals, etc) \n")
+  cat("4. Type again IOPs.go(report=TRUE)\n")
+  cat("5. Look at the IOPs.plot.pdf \n")
+  cat("WARNING: user will be prompted to synchronized the data form different instruments\n")
+  cat("This is due to the fact that instrument's clock are never perfectly synchronized\n")
+  cat("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
+}

@@ -1,0 +1,1495 @@
+\documentclass{article}
+\usepackage[greek,francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage{pdfcolmk}
+\usepackage[T1]{fontenc}
+\usepackage{authblk}
+\usepackage{float}    % for fig.pos='H'
+\usepackage{rotfloat} % for sidewaysfigure
+\usepackage[comma,authoryear]{natbib}
+\usepackage{multirow}
+\usepackage[nottoc,notlof,notlot]{tocbibind}
+\begin{document}
+
+
+\author[1]{}
+\title{Station <%=Station%>}
+\date{<%=Date%>}
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\maketitle
+
+
+
+<<options, echo=FALSE, warning=FALSE, results='hide', cache.lazy=FALSE, message=FALSE>>=
+options(prompt = " ", continue = " ", width = 85)
+opts_chunk$set(concordance=TRUE, fig.pos='H')
+@
+
+
+<<LoadData, echo=FALSE>>=
+
+lat= <%=lat%>
+lon= <%=lon%>
+instrument = list(HS6=<%=HS6%>, FLECO=<%=FLECO%>,  ASPH=<%=ASPH%>, ACS=<%=ACS%>, BB9=<%=BB9%>, LISST=<%=LISST%>, BB3=<%=BB3%>, FLBBCD=<%=FLBBCD%>,FLCHL=<%=FLCHL%>)
+
+minbb = 0
+maxbb =<%=maxbb%>
+load(file=paste("<%=dirdat%>","IOP.RData",sep=""))
+load(file=paste("<%=dirdat%>","IOP.fitted.down.RData",sep=""))
+load(file=paste("<%=dirdat%>","IOP.fitted.up.RData",sep=""))
+
+z = IOP.fitted.down$Depth
+nz <-  length(z)
+dz <-  floor(nz/<%=Ndepth.to.plot%>)
+ixz <- seq(z[2],nz,dz)
+@
+
+
+
+<<StationMap, fig.cap="Station position", echo=FALSE, fig.show='asis', warning=FALSE,message=FALSE>>=
+#LabSea = get_map(location = c(lon = -52, lat = 55), zoom = 5,  scale = "auto", maptype="satellite")
+ map(fill=T, xlim=c(lon-5,lon+5), ylim=c(lat-4,lat+4))
+ grid(nx=10, col=1)
+ points(lon,lat,col=2,cex=2, pch=20)
+box()
+axis(1)
+axis(2)
+@
+
+
+
+\section{CTD data}
+
+<<PrepareCTD, echo=FALSE>>=
+if (!is.null(IOP$CTD$Time)) {
+
+  Temperature = IOP$CTD$Temp[IOP$CTD$ixmin:IOP$CTD$ixmax]
+  Salinity = IOP$CTD$Sal[IOP$CTD$ixmin:IOP$CTD$ixmax]
+  ts.z = IOP$CTD$Depth[IOP$CTD$ixmin:IOP$CTD$ixmax]
+
+  Temperature.fitted.down = IOP.fitted.down$CTD$Temp
+  Salinity.fitted.down = IOP.fitted.down$CTD$Sal
+  CTD.UPCAST = !is.null(IOP.fitted.up$CTD$Sal)
+  if (CTD.UPCAST) {
+     Temperature.fitted.up = IOP.fitted.up$CTD$Temp
+     Salinity.fitted.up = IOP.fitted.up$CTD$Sal
+  }
+
+}
+
+
+@
+
+<<TSprofile, fig.cap="Temperature and Salinity profiles (upcast in blue) ", echo=FALSE, fig.show='asis', warning=FALSE>>=
+
+if (!is.null(IOP$CTD$Time)) {
+  Df = as.data.frame(cbind(ts.z, Temperature))
+  Df.fitted.down = as.data.frame(cbind(z, Temperature.fitted.down))
+  if (CTD.UPCAST)  Df.fitted.up = as.data.frame(cbind(z, Temperature.fitted.up))
+  p1 <- ggplot(data=Df, aes(x=Temperature, y=-ts.z)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Df.fitted.down, aes(x=Temperature.fitted.down, y=-z), size=1.7, color="red")
+  if (CTD.UPCAST) p1 <- p1 + geom_point(data=Df.fitted.up, aes(x=Temperature.fitted.up, y=-z), size=1.7, color="blue")
+  p1 <- p1 + labs(x=expression(paste("Temperature", " (°C)")) , y="Depth (m)")
+  #print(p1)
+
+  Df = as.data.frame(cbind(ts.z, Salinity))
+  Df.fitted.down = as.data.frame(cbind(z, Salinity.fitted.down))
+  if (CTD.UPCAST) Df.fitted.up = as.data.frame(cbind(z, Salinity.fitted.up))
+  p2 <- ggplot(data=Df, aes(x=Salinity, y=-ts.z)) + geom_point(size=1.)
+  p2 <- p2 + geom_point(data=Df.fitted.down, aes(x=Salinity.fitted.down, y=-z), size=1.7, color="red")
+  if (CTD.UPCAST) p2 <- p2 + geom_point(data=Df.fitted.up, aes(x=Salinity.fitted.up, y=-z), size=1.7, color="blue")
+  p2 <- p2 + labs(x=expression(paste("Salinity", " (PSU)")) , y="")
+  #print(p1)
+
+  pushViewport(viewport(layout = grid.layout(1, 2)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+  print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+}
+@
+
+\section{Backscattering data}
+
+<<PrepareBB9, echo=FALSE>>=
+
+if (instrument$BB9 == 1) {
+
+
+    # Extract data from list to simplify the code
+    bb.fitted.down = IOP.fitted.down$BB9$bb
+    bbP.fitted.down = IOP.fitted.down$BB9$bbP
+    bb.fitted.down[bb.fitted.down < minbb] = NA
+    bb.fitted.down[bb.fitted.down > maxbb] = NA
+    bbP.fitted.down[bbP.fitted.down < minbb] = NA
+    bbP.fitted.down[bbP.fitted.down > maxbb] = NA
+    ix.down =   IOP$BB9$ixmin:IOP$BB9$ix.z.max
+    waves.bb9 = IOP$BB9$wl
+    n.wl = length(waves.bb9)
+    bb.z.d = IOP$BB9$Depth[ix.down]
+    bb.d = IOP$BB9$bb.offset[ix.down,]
+    bbP.d = IOP$BB9$bbP.offset[ix.down,]
+    bb.d[bb.d < minbb] = NA
+    bb.d[bb.d > maxbb] = NA
+    bbP.d[bbP.d < minbb] = NA
+    bbP.d[bbP.d > maxbb] = NA
+
+    BB9.UPCAST = !is.null(IOP.fitted.up$BB9$bb)
+
+    if (BB9.UPCAST) {
+      bb.fitted.up = IOP.fitted.up$BB9$bb
+      bbP.fitted.up = IOP.fitted.up$BB9$bbP
+      bb.fitted.up[bb.fitted.up < minbb] = NA
+      bb.fitted.up[bb.fitted.up > maxbb] =NA
+      bbP.fitted.up[bbP.fitted.up < minbb] = NA
+      bbP.fitted.up[bbP.fitted.up > maxbb] = NA
+      ix.up = IOP$BB9$ix.z.max:IOP$BB9$ixmax
+      bb.z.u = IOP$BB9$Depth[ix.up]
+      bb.u = IOP$BB9$bb.offset[ix.up,]
+      bbP.u = IOP$BB9$bbP.offset[ix.up,]
+      bb.u[bb.u < minbb] = NA
+    bbP.u[bbP.u > maxbb] = NA
+    }
+
+}
+@
+
+<<bbVSdepth, fig.cap="Total backscattering (upper) and particulate backscattering (lower) for down and up casts (BB9 instrument).", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=11>>=
+
+if (instrument$BB9 == 1) {
+  Df.d = as.data.frame(cbind(-bb.z.d, bb.d[,9:1]))
+  names(Df.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+  Df.fitted.d = as.data.frame(cbind(-z, bb.fitted.down[,9:1]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p1 <- p1 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+  #print(p1)
+
+  if (BB9.UPCAST) {
+    Df.u = as.data.frame(cbind(-bb.z.u, bb.u[,9:1]))
+    names(Df.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, bb.fitted.up[,9:1]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength))    + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+
+  }
+
+  # plot bbP
+  Df.d = as.data.frame(cbind(-bb.z.d, bbP.d[,9:1]))
+  names(Df.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+  Df.fitted.d = as.data.frame(cbind(-z, bbP.fitted.down[,9:1]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength))  + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p3 <- p3 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+
+
+  if (BB9.UPCAST) {
+    Df.u = as.data.frame(cbind(-bb.z.u, bbP.u[,9:1]))
+    names(Df.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, bbP.fitted.up[,9:1]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
+    p4 <- p4 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+  }
+
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (BB9.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+  if (BB9.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+
+}
+
+@
+
+<<SpectralbbVSdepth, fig.cap="Spectral total backscattering at selected depth", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=10>>=
+
+if (instrument$BB9 == 1) {
+ Df.d = as.data.frame(cbind(waves.bb9, t(bb.fitted.down[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.bb9"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p1 <- p1 + scale_x_continuous(limits = c(400, 720))
+  p1 <- p1 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
+  p1 <- p1 + ggtitle("Down cast")
+
+  if (BB9.UPCAST) {
+      Df.u = as.data.frame(cbind(waves.bb9, t(bb.fitted.up[ixz,])))
+      Dfm.u = melt(Df.u, id.vars = c("waves.bb9"))
+      names(Dfm.u) = c("wavelength", "Depth", "value" )
+      p2 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+      p2 <- p2 + scale_x_continuous(limits = c(400, 720)) + guides(colour=F)
+      p2 <- p2 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
+      p2 <- p2 + ggtitle("Up cast")
+  }
+
+  Df.d = as.data.frame(cbind(waves.bb9, t(bbP.fitted.down[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.bb9"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p3 <- p3 + scale_x_continuous(limits = c(400, 720)) + guides(colour=F)
+  p3 <- p3 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
+  p3 <- p3 + ggtitle("Down cast")
+
+  if (BB9.UPCAST) {
+    Df.u = as.data.frame(cbind(waves.bb9, t(bbP.fitted.up[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.bb9"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+    p4 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p4 <- p4 + scale_x_continuous(limits = c(400, 720))  + guides(colour=F)
+    p4 <- p4 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
+    p4 <- p4 + ggtitle("Up cast")
+  }
+
+  if (BB9.UPCAST) {
+    pushViewport(viewport(layout = grid.layout(4, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+    print(p3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1:6))
+    print(p4, vp = viewport(layout.pos.row = 4, layout.pos.col = 1:6))
+  } else {
+    pushViewport(viewport(layout = grid.layout(2, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+  }
+}
+
+@
+
+<<PrepareHS6, echo=FALSE>>=
+
+if (instrument$HS6 == 1) {
+
+    # Extract data from list to simplify the code
+    bb.fitted.down = IOP.fitted.down$HS6$bb
+    bbP.fitted.down = IOP.fitted.down$HS6$bbP
+    bb.fitted.down[bb.fitted.down < minbb] = NA
+    bb.fitted.down[bb.fitted.down > maxbb] = NA
+    bbP.fitted.down[bbP.fitted.down < minbb] = NA
+    bbP.fitted.down[bbP.fitted.down > maxbb] = NA
+    waves.bb6 = IOP$HS6$wl
+    n.wl = length(waves.bb6)
+    ix.down =   IOP$HS6$ixmin:IOP$HS6$ix.z.max
+    bb.z.d = IOP$HS6$depth[ix.down]
+    bb.d = IOP$HS6$bb.corrected[ix.down,]
+    bbP.d = IOP$HS6$bbP.corrected[ix.down,]
+    bb.d[bb.d < minbb] = NA
+    bb.d[bb.d > maxbb] = NA
+    bbP.d[bbP.d < minbb] = NA
+    bbP.d[bbP.d > maxbb] = NA
+
+    HS6.UPCAST = !is.null(IOP.fitted.up$HS6$bb)
+    if (HS6.UPCAST) {
+      bb.fitted.up = IOP.fitted.up$HS6$bb
+      bbP.fitted.up = IOP.fitted.up$HS6$bbP
+      bb.fitted.up[bb.fitted.up < minbb] = NA
+      bb.fitted.up[bb.fitted.up > maxbb] =NA
+      bbP.fitted.up[bbP.fitted.up < minbb] = NA
+      bbP.fitted.up[bbP.fitted.up > maxbb] = NA
+      ix.up = IOP$HS6$ix.z.max:IOP$HS6$ixmax
+      bb.z.u = IOP$HS6$depth[ix.up]
+      bb.u = IOP$HS6$bb.corrected[ix.up,]
+      bbP.u = IOP$HS6$bbP.corrected[ix.up,]
+      bb.u[bb.u < minbb] = NA
+      bb.u[bb.u > maxbb] = NA
+      bbP.u[bbP.u < minbb] = NA
+      bbP.u[bbP.u > maxbb] = NA
+    }
+
+}
+@
+
+<<HS6bbVSdepth, fig.cap="Total backscattering (upper) and particulate backscattering (lower) for down and up casts (HS6 instrument).", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=11>>=
+
+if (instrument$HS6 == 1) {
+  Df.d = as.data.frame(cbind(-bb.z.d, bb.d[,6:1]))
+  names(Df.d) <- c("Depth", as.character(waves.bb6[6:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, bb.fitted.down[,6:1]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb6[6:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p1 <- p1 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+  #print(p1)
+  if (HS6.UPCAST) {
+    Df.u = as.data.frame(cbind(-bb.z.u, bb.u[,6:1]))
+    names(Df.u) <- c("Depth", as.character(waves.bb6[6:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, bb.fitted.up[,6:1]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb6[6:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+  }
+
+  # Plot bbP
+  Df.d = as.data.frame(cbind(-bb.z.d, bbP.d[,6:1]))
+  names(Df.d) <- c("Depth", as.character(waves.bb6[6:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+  Df.fitted.d = as.data.frame(cbind(-z, bbP.fitted.down[,6:1]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb6[6:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p3 <- p3 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+
+  if (HS6.UPCAST) {
+    Df.u = as.data.frame(cbind(-bb.z.u, bbP.u[,6:1]))
+    names(Df.u) <- c("Depth", as.character(waves.bb6[6:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, bbP.fitted.up[,6:1]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb6[6:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
+    p4 <- p4 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+  }
+
+
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+   if (HS6.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+   if (HS6.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+
+}
+
+@
+
+<<HS6SpectralbbVSdepth, fig.cap="Spectral total backscattering at selected depth", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=10>>=
+
+if (instrument$HS6 == 1) {
+  Df.d = as.data.frame(cbind(waves.bb6, t(bb.fitted.down[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.bb6"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p1 <- p1 + scale_x_continuous(limits = c(390, 720))
+  p1 <- p1 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
+  p1 <- p1 + ggtitle("Down cast")
+
+   if (HS6.UPCAST) {
+    Df.u = as.data.frame(cbind(waves.bb6, t(bb.fitted.up[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.bb6"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p2 <- p2 + scale_x_continuous(limits = c(390, 720)) + guides(colour=F)
+    p2 <- p2 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
+    p2 <- p2 + ggtitle("Up cast")
+   }
+
+  Df.d = as.data.frame(cbind(waves.bb6, t(bbP.fitted.down[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.bb6"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p3 <- p3 + scale_x_continuous(limits = c(390, 720)) + guides(colour=F)
+  p3 <- p3 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
+  p3 <- p3 + ggtitle("Down cast")
+
+   if (HS6.UPCAST) {
+    Df.u = as.data.frame(cbind(waves.bb6, t(bbP.fitted.up[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.bb6"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p4 <- p4 + scale_x_continuous(limits = c(390, 720))  + guides(colour=F)
+    p4 <- p4 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
+    p4 <- p4 + ggtitle("Up cast")
+   }
+
+  if (HS6.UPCAST) {
+    pushViewport(viewport(layout = grid.layout(4, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+    print(p3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1:6))
+    print(p4, vp = viewport(layout.pos.row = 4, layout.pos.col = 1:6))
+  } else {
+    pushViewport(viewport(layout = grid.layout(2, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+  }
+}
+
+@
+
+<<PrepareBB3, echo=FALSE>>=
+
+if (instrument$BB3 == 1) {
+
+    # Extract data from list to simplify the code
+    bb.fitted.down = IOP.fitted.down$BB3$bb
+    bbP.fitted.down = IOP.fitted.down$BB3$bbP
+    bb.fitted.down[bb.fitted.down < minbb] = NA
+    bb.fitted.down[bb.fitted.down > maxbb] = NA
+    bbP.fitted.down[bbP.fitted.down < minbb] = NA
+    bbP.fitted.down[bbP.fitted.down > maxbb] = NA
+    waves.bb3 = IOP$BB3$wl
+    n.wl = length(waves.bb3)
+    ix.down =   IOP$BB3$ixmin:IOP$BB3$ix.z.max
+    bb.z.d = IOP$BB3$Depth[ix.down]
+    bb.d = IOP$BB3$bb.offset[ix.down,]
+    bbP.d = IOP$BB3$bbP.offset[ix.down,]
+    bb.d[bb.d < minbb] = NA
+    bb.d[bb.d > maxbb] = NA
+    bbP.d[bbP.d < minbb] = NA
+    bbP.d[bbP.d > maxbb] = NA
+
+    BB3.UPCAST = !is.null(IOP.fitted.up$BB3$bb)
+
+    if (BB3.UPCAST) {
+      bb.fitted.up = IOP.fitted.up$BB3$bb
+      bbP.fitted.up = IOP.fitted.up$BB3$bbP
+      bb.fitted.up[bb.fitted.up < minbb] = NA
+      bb.fitted.up[bb.fitted.up > maxbb] =NA
+      bbP.fitted.up[bbP.fitted.up < minbb] = NA
+      bbP.fitted.up[bbP.fitted.up > maxbb] = NA
+      ix.up = IOP$BB3$ix.z.max:IOP$BB3$ixmax
+      bb.z.u = IOP$BB3$Depth[ix.up]
+      bb.u = IOP$BB3$bb.offset[ix.up,]
+      bbP.u = IOP$BB3$bbP.offset[ix.up,]
+      bb.u[bb.u < minbb] = NA
+      bb.u[bb.u > maxbb] = NA
+      bbP.u[bbP.u < minbb] = NA
+      bbP.u[bbP.u > maxbb] = NA
+    }
+}
+@
+
+<<bb3VSdepth, fig.cap="Total backscattering (upper) and particulate backscattering (lower) for down and up casts (BB3 instrument).", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=11>>=
+
+if (instrument$BB3 == 1) {
+  Df.d = as.data.frame(cbind(-bb.z.d, bb.d[,3:1]))
+  names(Df.d) <- c("Depth", as.character(waves.bb3[3:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, bb.fitted.down[,3:1]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb3[3:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p1 <- p1 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+
+  if (BB3.UPCAST) {
+    Df.u = as.data.frame(cbind(-bb.z.u, bb.u[,3:1]))
+    names(Df.u) <- c("Depth", as.character(waves.bb3[3:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, bb.fitted.up[,3:1]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb3[3:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+  }
+
+  Df.d = as.data.frame(cbind(-bb.z.d, bbP.d[,3:1]))
+  names(Df.d) <- c("Depth", as.character(waves.bb3[3:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, bbP.fitted.down[,3:1]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb3[3:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p3 <- p3 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+
+  if (BB3.UPCAST) {
+    Df.u = as.data.frame(cbind(-bb.z.u, bbP.u[,3:1]))
+    names(Df.u) <- c("Depth", as.character(waves.bb3[3:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, bbP.fitted.up[,3:1]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb3[3:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
+    p4 <- p4 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+  }
+
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (BB3.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+  if (BB3.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+
+}
+
+@
+
+<<Spectralbb3VSdepth, fig.cap="Spectral total backscattering at selected depth (BB3)", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=10>>=
+
+if (instrument$BB3 == 1) {
+
+  Df.d = as.data.frame(cbind(waves.bb3, t(bb.fitted.down[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.bb3"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p1 <- p1 + scale_x_continuous(limits = c(700, 900))
+  p1 <- p1 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
+  p1 <- p1 + ggtitle("Down cast")
+
+  if (BB3.UPCAST) {
+    Df.u = as.data.frame(cbind(waves.bb3, t(bb.fitted.up[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.bb3"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p2 <- p2 + scale_x_continuous(limits = c(700, 900)) + guides(colour=F)
+    p2 <- p2 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
+    p2 <- p2 + ggtitle("Up cast")
+  }
+
+  Df.d = as.data.frame(cbind(waves.bb3, t(bbP.fitted.down[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.bb3"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p3 <- p3 + scale_x_continuous(limits = c(700, 900)) + guides(colour=F)
+  p3 <- p3 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
+  p3 <- p3 + ggtitle("Down cast")
+
+  if (BB3.UPCAST) {
+    Df.u = as.data.frame(cbind(waves.bb3, t(bbP.fitted.up[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.bb3"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p4 <- p4 + scale_x_continuous(limits = c(700, 900))  + guides(colour=F)
+    p4 <- p4 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
+    p4 <- p4 + ggtitle("Up cast")
+  }
+
+  if (BB3.UPCAST) {
+    pushViewport(viewport(layout = grid.layout(4, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+    print(p3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1:6))
+    print(p4, vp = viewport(layout.pos.row = 4, layout.pos.col = 1:6))
+  } else {
+    pushViewport(viewport(layout = grid.layout(2, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+  }
+
+}
+
+@
+
+
+
+\section{Absorption and attenuation data}
+\subsection{ACs meter}
+
+<<PrepareACS, echo=FALSE, warning=FALSE>>=
+
+if (instrument$ACS == 1) {
+
+  waves.a = IOP$ACS$a.wl
+  waves.c = IOP$ACS$c.wl
+  n.wl = length(waves.a)
+  # Wavelenght setected to plot profile corresponding to BB9
+  ix.wl = rep(NA,9)
+  if (is.null(IOP$BB9$wl)) wl.selected = c(412,443,488,510,555,590,620,676,700) else wl.selected = IOP$BB9$wl
+  for (j in 1:9){
+      ix.wl[j] = which.min(abs(IOP$ACS$a.wl-wl.selected[j]))
+  }
+  ix.wl = sort(ix.wl, decreasing = T)
+
+  # Extract data from list to simplify the code
+  a.fitted.d = IOP.fitted.down$ACS$a
+  c.fitted.d = IOP.fitted.down$ACS$c
+  ix.down =   IOP$ACS$ixmin:IOP$ACS$ix.z.max
+  ac.z.d = IOP$ACS$Depth[ix.down]
+  a.d = IOP$ACS$a.corrected[ix.down,]
+  c.d = IOP$ACS$c.corrected[ix.down,]
+  a.d[a.d < 0] = NA
+  c.d[c.d < 0] = NA
+  a.fitted.d[a.fitted.d < 0] = NA
+  c.fitted.d[c.fitted.d < 0] = NA
+
+  a.raw = IOP$ACS$a[IOP$ACS$ixmin:IOP$ACS$ixmax,]
+  c.raw = IOP$ACS$c[IOP$ACS$ixmin:IOP$ACS$ixmax,]
+
+  ACS.UPCAST = !is.null(IOP.fitted.up$ACS$a)
+  if (ACS.UPCAST) {
+    a.fitted.u = IOP.fitted.up$ACS$a
+    c.fitted.u = IOP.fitted.up$ACS$c
+    ix.up =     IOP$ACS$ix.z.max:IOP$ACS$ixmax
+    ac.z.u = IOP$ACS$Depth[ix.up]
+    a.u = IOP$ACS$a.corrected[ix.up,]
+    c.u = IOP$ACS$c.corrected[ix.up,]
+    a.u[a.u < 0] = NA
+    a.fitted.u[a.fitted.u < 0] = NA
+    c.u[c.u < 0] = NA
+    c.fitted.u[c.fitted.u < 0] = NA
+  }
+}
+
+@
+
+
+<<acVSdepth, fig.cap="Non-water absorption (left) and attenuation (right) coefficients from AC-s at selected wavelengths.", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=8>>=
+
+
+if (instrument$ACS == 1) {
+    ######## absorption down cast
+  #####
+  Df.d = as.data.frame(cbind(-ac.z.d, a.d[,ix.wl]))
+  names(Df.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, a.fitted.d[,ix.wl]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p1 <- p1 + scale_x_continuous(limits = c(0, max(Dfm.fitted.d$value,na.rm=T)))
+  p1 <- p1 + labs(x=expression(paste("a"["t-w"], " (m"^"-1",")")) , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+  #####
+
+  if (ACS.UPCAST) {
+    ######## absorption up cast
+    #####
+    Df.u = as.data.frame(cbind(-ac.z.u, a.u[,ix.wl]))
+    names(Df.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+
+    Df.fitted.u = as.data.frame(cbind(-z, a.fitted.u[,ix.wl]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + scale_x_continuous(limits = c(0, max(Dfm.fitted.u$value,na.rm=T)))
+    p2 <- p2 + labs(x=expression(paste("a"["t-w"], " (m"^"-1",")")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+    #####
+  }
+
+  ######### attenuation down cast
+  #####
+  Df.d = as.data.frame(cbind(-ac.z.d, c.d[,ix.wl]))
+  names(Df.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, c.fitted.d[,ix.wl]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.bb9[9:1]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)+ guides(colour=F)
+  p3 <- p3 + labs(x=expression(paste("c"["t-w"], " (m"^"-1",")")) , y="")
+  p3 <- p3 + scale_x_continuous(limits = c(0, max(Dfm.fitted.d$value,na.rm=T)))
+  #####
+
+  if (ACS.UPCAST) {
+    ######### attenuation up cast
+    Df.u = as.data.frame(cbind(-ac.z.u, c.u[,ix.wl]))
+    names(Df.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+
+    Df.fitted.u = as.data.frame(cbind(-z, c.fitted.u[,ix.wl]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.bb9[9:1]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
+    p4 <- p4 + labs(x=expression(paste("c"["t-w"], " (m"^"-1",")")) , y="Depth (m)")
+    p4 <- p4 + scale_x_continuous(limits = c(0, max(Dfm.fitted.u$value,na.rm=T)))
+
+  }
+
+  #####
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (ACS.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+  if (ACS.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+  #####
+}
+
+@
+
+
+<<SpectralacVSdepth, fig.cap="Spectral non-water absorption (upper) and attenuation (bottom) at selected depth", echo=FALSE, fig.show='asis', warning=FALSE,fig.height=10>>=
+
+if (instrument$ACS == 1) {
+  # Plot a at selected depth on down cast.
+  #####
+  Df.d = as.data.frame(cbind(waves.a, t(a.fitted.d[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.a"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p1 <- p1 + scale_x_continuous(limits = c(400, 720))
+  p1 <- p1 + labs(x="wavelength", y=expression(paste("a"["t-w"]," (m"^"-1",")")))
+  p1 <- p1 + ggtitle("Down cast")
+  #####
+
+  if (ACS.UPCAST) {
+    # Plot a at selected depth on up cast.
+    #####
+    Df.u = as.data.frame(cbind(waves.a, t(a.fitted.u[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.a"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p2 <- p2 + scale_x_continuous(limits = c(400, 720))
+    p2 <- p2 + labs(x="wavelength", y=expression(paste("a"["t-w"]," (m"^"-1",")")))
+    p2 <- p2 + ggtitle("Up cast") + guides(colour=F)
+    #####
+  }
+
+  # Plot c at selected depth on down cast.
+  #####
+  Df.d = as.data.frame(cbind(waves.c, t(c.fitted.d[ixz,])))
+  Dfm.d = melt(Df.d, id.vars = c("waves.c"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p3 <- p3 + scale_x_continuous(limits = c(400, 720))
+  p3 <- p3 + labs(x="wavelength", y=expression(paste("c"["t-w"]," (m"^"-1",")")))
+  p3 <- p3 + ggtitle("Down cast") + guides(colour=F)
+  #####
+
+  if (ACS.UPCAST) {
+    # Plot c at selected depth on up cast.
+    #####
+    Df.u = as.data.frame(cbind(waves.c, t(c.fitted.u[ixz,])))
+    Dfm.u = melt(Df.u, id.vars = c("waves.c"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p4 <- p4 + scale_x_continuous(limits = c(400, 720))
+    p4 <- p4 + labs(x="wavelength", y=expression(paste("c"["t-w"]," (m"^"-1",")")))
+    p4 <- p4 + ggtitle("Up cast")+ guides(colour=F)
+    #####
+  }
+
+  if (ACS.UPCAST) {
+    pushViewport(viewport(layout = grid.layout(4, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+    print(p3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1:6))
+    print(p4, vp = viewport(layout.pos.row = 4, layout.pos.col = 1:6))
+  } else {
+    pushViewport(viewport(layout = grid.layout(2, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+  }
+}
+
+@
+
+
+\subsection{A-sphere meter}
+<<PrepareASPH, echo=FALSE, warning=FALSE,error=FALSE,message=FALSE, prompt=FALSE>>=
+
+if (instrument$ASPH == 1) {
+
+  waves.asph = IOP$ASPH$wl
+  n.wl = length(waves.asph)
+
+  # Wavelenght setected to plot profile corresponding to BB9
+  ix.wl.asph = c(356,317,301,236,173,151,129,81,53)
+
+ # Extract data from lists to simplify the code
+  asph.fitted.d = IOP.fitted.down$ASPH$a
+  ix.down =   IOP$ASPH$ixmin:IOP$ASPH$ix.z.max
+  asph.z.d = IOP$ASPH$depth[ix.down]
+  asph.d = IOP$ASPH$a.corrected[ix.down,]
+  asph.raw = IOP$ASPH$a[IOP$ASPH$ixmin:IOP$ASPH$ixmax,]
+  tmp=fit.with.loess(z[ixz], waves.asph, t(asph.fitted.d[ixz,]),
+                      span=0.05, waves.asph)
+  a.smoothed.d = tmp$aop.fitted
+  colnames(a.smoothed.d) <- z[ixz]
+
+  ASPH.UPCAST = !is.null(IOP.fitted.up$ASPH$a)
+  if (ASPH.UPCAST) {
+    asph.fitted.u = IOP.fitted.up$ASPH$a
+    ix.up =     IOP$ASPH$ix.z.max:IOP$ASPH$ixmax
+    asph.z.u = IOP$ASPH$depth[ix.up]
+    asph.u = IOP$ASPH$a.corrected[ix.up,]
+    tmp=fit.with.loess(z[ixz], waves.asph, t(asph.fitted.u[ixz,]),
+                        span=0.05, waves.asph)
+    a.smoothed.u = tmp$aop.fitted
+    colnames(a.smoothed.u) <- z[ixz]
+  }
+}
+
+@
+
+<<asphVSdepth, fig.cap="Non-water absorption coefficient from A-sphere at selected wavelengths.", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=8>>=
+
+if (instrument$ASPH == 1) {
+
+  ######## down cast
+  #####
+  Df.d = as.data.frame(cbind(-asph.z.d, asph.d[,ix.wl.asph]))
+  names(Df.d) <- c("Depth", as.character(waves.asph[ix.wl.asph]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, asph.fitted.d[,ix.wl.asph]))
+  names(Df.fitted.d) <- c("Depth", as.character(waves.asph[ix.wl.asph]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p1 <- p1 + labs(x=expression(paste("a"["t-w"], " (m"^"-1",")")) , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+  p1 <- p1 + scale_x_continuous(limits = c(0, max(Dfm.fitted.d$value,na.rm=T)))
+
+  #####
+
+  if (ASPH.UPCAST) {
+    ######## up cast
+    #####
+    Df.u = as.data.frame(cbind(-asph.z.u, asph.u[,ix.wl.asph]))
+    names(Df.u) <- c("Depth", as.character(waves.asph[ix.wl.asph]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+
+    Df.fitted.u = as.data.frame(cbind(-z, asph.fitted.u[,ix.wl.asph]))
+    names(Df.fitted.u) <- c("Depth", as.character(waves.asph[ix.wl.asph]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + labs(x=expression(paste("a"["t-w"], " (m"^"-1",")")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+    p2 <- p2 + scale_x_continuous(limits = c(0, max(Dfm.fitted.u$value,na.rm=T)))
+
+    #####
+  }
+  pushViewport(viewport(layout = grid.layout(1, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (ASPH.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+}
+@
+
+<<SpectralasphVSdepth, fig.cap="Spectral non-water absorption at selected depths", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=8>>=
+
+if (instrument$ASPH == 1) {
+
+  # Plot a at selected depth for down cast.
+  #####
+  Df.d = as.data.frame(cbind(waves.asph, a.smoothed.d))
+  Dfm.d = melt(Df.d, id.vars = c("waves.asph"))
+  names(Dfm.d) = c("wavelength", "Depth", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+  p1 <- p1 + scale_x_continuous(limits = c(360, 720))
+  #p1 <- p1 + scale_y_continuous(limits = c(0, 0.15))
+  p1 <- p1 + labs(x="wavelength", y=expression(paste("a"["t-w"]," (m"^"-1",")")))
+  p1 <- p1 + ggtitle("Down cast")
+  p1 <- p1 + scale_y_continuous(limits = c(0, max(Dfm.d$value,na.rm=T)))
+   #####
+
+  if (ASPH.UPCAST) {
+    # Plot a at selected depth for up cast.
+    #####
+    Df.u = as.data.frame(cbind(waves.asph, a.smoothed.u))
+    Dfm.u = melt(Df.u, id.vars = c("waves.asph"))
+    names(Dfm.u) = c("wavelength", "Depth", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=wavelength, y=value, colour=Depth)) + geom_line()
+    p2 <- p2 + scale_x_continuous(limits = c(360, 720)) + guides(colour=F)
+    #p2 <- p2 + scale_y_continuous(limits = c(0, 0.15))
+    p2 <- p2 + labs(x="wavelength", y=expression(paste("a"["t-w"]," (m"^"-1",")")))
+    p2 <- p2 + ggtitle("Up cast")
+    p2 <- p2 + scale_y_continuous(limits = c(0, max(Dfm.u$value,na.rm=T)))
+    #####
+  }
+
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+  if (ASPH.UPCAST) print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+
+}
+
+@
+
+\section{LISST data}
+<<PrepareLISST, echo=FALSE, warning=FALSE>>=
+
+if (instrument$LISST == 1) {
+
+  # bins setected to plot profile
+  ix.bin = c(6,9,14,17,22,26,29,32)
+  size.bin = IOP$LISST$median_bins
+  n.bin = length(size.bin)
+  ix.down =   IOP$LISST$ixmin:IOP$LISST$ix.z.max
+  # Extract data from list to simplify the code
+  PSD.fitted.d = IOP.fitted.down$LISST$PSD
+  PSD.fitted.d[PSD.fitted.d < 0.0001] = NA
+  N.prime.fitted.d = IOP.fitted.down$LISST$N_prime
+  N.prime.fitted.d[N.prime.fitted.d < 1e3] = NA
+  lisst.z.d = IOP$LISST$Depth[ix.down]
+  PSD.d = IOP$LISST$PSD[ix.down,]
+  N.prime.d = IOP$LISST$N_prime[ix.down,]
+  c670.d = IOP$LISST$c670[ix.down]
+  c670.fitted.d = IOP.fitted.down$LISST$c670
+
+  LISST.UPCAST = !is.null(IOP.fitted.up$LISST$PSD)
+  if (LISST.UPCAST) {
+    PSD.fitted.u = IOP.fitted.up$LISST$PSD
+    PSD.fitted.u[PSD.fitted.u < 0.0001] = NA
+    N.prime.fitted.u = IOP.fitted.up$LISST$N_prime
+    N.prime.fitted.u[N.prime.fitted.u < 1e3] = NA
+    c670.fitted.u = IOP.fitted.up$LISST$c670
+    ix.up =     IOP$LISST$ix.z.max:IOP$LISST$ixmax
+    lisst.z.u = IOP$LISST$Depth[ix.up]
+    PSD.u = IOP$LISST$PSD[ix.up,]
+    N.prime.u = IOP$LISST$N_prime[ix.up,]
+    c670.u = IOP$LISST$c670[ix.up]
+  }
+
+}
+
+@
+
+<<LISSTVSdepth, fig.cap="Vertical variations in particule volume (upper) and number (lower) for selected bins", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=10.5>>=
+
+if (instrument$LISST == 1) {
+
+  ###### Plot particules Volume as a function of depth on down cast
+  #####
+  Df.d = as.data.frame(cbind(-lisst.z.d, PSD.d[,ix.bin]))
+  names(Df.d) <- c("Depth", as.character(size.bin[ix.bin]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "BinSize", "value" )
+
+  Df.fitted.d= as.data.frame(cbind(-z, PSD.fitted.d[,ix.bin]))
+  names(Df.fitted.d) <- c("Depth", as.character(size.bin[ix.bin]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "BinSize", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=BinSize)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)
+  p1 <- p1 + scale_x_log10(limits=c(0.001,5))
+  p1 <- p1 + labs(x=expression(paste("V' (D)")) , y="Depth (m)")+ guides(colour=F)
+  p1 <- p1 + ggtitle("Down cast")
+  #####
+
+  if (LISST.UPCAST) {
+    ###### Plot Volume as a function of depth on up cast
+    #####
+    Df.u = as.data.frame(cbind(-lisst.z.u, PSD.u[,ix.bin]))
+    names(Df.u) <- c("Depth", as.character(size.bin[ix.bin]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "BinSize", "value" )
+
+    Df.fitted.u= as.data.frame(cbind(-z, PSD.fitted.u[,ix.bin]))
+    names(Df.fitted.u) <- c("Depth", as.character(size.bin[ix.bin]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "BinSize", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=BinSize)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + scale_x_log10(limits=c(0.001,5))
+    p2 <- p2 + labs(x=expression(paste("V' (D)")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+    #####
+  }
+
+  ###### Plot particules number as a function of depth on down cast
+  #####
+  Df.d = as.data.frame(cbind(-lisst.z.d, N.prime.d[,ix.bin]))
+  names(Df.d) <- c("Depth", as.character(size.bin[ix.bin]))
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "BinSize", "value" )
+
+  Df.fitted.d = as.data.frame(cbind(-z, N.prime.fitted.d[,ix.bin]))
+  names(Df.fitted.d) <- c("Depth", as.character(size.bin[ix.bin]))
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "BinSize", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=BinSize)) + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)
+  p3 <- p3 + scale_x_log10()
+  p3 <- p3 + labs(x=expression(paste("N' (D)")) , y="Depth (m)") + guides(colour=F)
+  #####
+
+  if (LISST.UPCAST) {
+    ###### Plot particules number as a function of depth on up cast
+    #####
+    Df.u = as.data.frame(cbind(-lisst.z.u, N.prime.u[,ix.bin]))
+    names(Df.u) <- c("Depth", as.character(size.bin[ix.bin]))
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "BinSize", "value" )
+
+    Df.fitted.u = as.data.frame(cbind(-z, N.prime.fitted.u[,ix.bin]))
+    names(Df.fitted.u) <- c("Depth", as.character(size.bin[ix.bin]))
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "BinSize", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=BinSize)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p4 <- p4 + scale_x_log10()
+    p4 <- p4 + labs(x=expression(paste("N' (D)")) , y="Depth (m)") + guides(colour=F)
+  }
+  #####
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (LISST.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+  if (LISST.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+}
+@
+
+
+<<LISSTVSbins, fig.cap="Size spectra for selected depths", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=10>>=
+
+if (instrument$LISST == 1) {
+
+  ########### Plot Particules volume spectra for selected depth on down cast
+  #####
+  Df.d = as.data.frame(cbind(size.bin, t(PSD.fitted.d[ixz,4:32])))
+  Dfm.d = melt(Df.d, id.vars = c("size.bin"))
+  names(Dfm.d) = c("Size", "Depth", "value" )
+
+  p1 <- ggplot(data=Dfm.d, aes(x=Size, y=value, colour=Depth)) + geom_line()
+  p1 <- p1 + scale_y_log10(limits=c(0.001, 3))
+  p1 <- p1 + scale_x_log10()
+  p1 <- p1 + labs(x=expression(paste("Size classes (", mu, "m)")) , y="V'(D)")
+  p1 <- p1 + ggtitle("Down cast")
+  #####
+
+  if (LISST.UPCAST) {
+    ########### Plot Particules volume spectra for selected depth on up cast
+    #####
+    Df.u = as.data.frame(cbind(size.bin, t(PSD.fitted.u[ixz,4:32])))
+    Dfm.u = melt(Df.u, id.vars = c("size.bin"))
+    names(Dfm.u) = c("Size", "Depth", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=Size, y=value, colour=Depth)) + geom_line()
+    p2 <- p2 + scale_y_log10(limits=c(0.001, 3))
+    p2 <- p2 + scale_x_log10()
+    p2 <- p2 + labs(x=expression(paste("Size classes (", mu, "m)")) , y="V'(D)") + guides(colour=F)
+    p2 <- p2 + ggtitle("Up cast")
+    #####
+  }
+
+  ########### Plot Particules number spectra for selected depth on down cast
+  #####
+  Df.d = as.data.frame(cbind(size.bin, t(N.prime.fitted.d[ixz,4:32])))
+  Dfm.d = melt(Df.d, id.vars = c("size.bin"))
+  names(Dfm.d) = c("Size", "Depth", "value" )
+
+  p3 <- ggplot(data=Dfm.d, aes(x=Size, y=value, colour=Depth)) + geom_line()
+  p3 <- p3 + scale_y_log10()
+  p3 <- p3 + scale_x_log10()
+  p3 <- p3 + labs(x=expression(paste("Size classes (", mu, "m)")) , y="N'(D)")
+  p3 <- p3 + ggtitle("Down cast") + guides(colour=F)
+  #####
+
+  if (LISST.UPCAST) {
+    ########### Plot Particules number spectra for selected depth on up cast
+    #####
+    Df.u = as.data.frame(cbind(size.bin, t(N.prime.fitted.u[ixz,4:32])))
+    Dfm.u = melt(Df.u, id.vars = c("size.bin"))
+    names(Dfm.u) = c("Size", "Depth", "value" )
+
+    p4 <- ggplot(data=Dfm.u, aes(x=Size, y=value, colour=Depth)) + geom_line()
+    p4 <- p4 + scale_y_log10()
+    p4 <- p4 + scale_x_log10()
+    p4 <- p4 + labs(x=expression(paste("Size classes (", mu, "m)")) , y="N'(D)") + guides(colour=F)
+    p4 <- p4 + ggtitle("Up cast")
+    #####
+  }
+
+  if (LISST.UPCAST) {
+    pushViewport(viewport(layout = grid.layout(4, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+    print(p3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1:6))
+    print(p4, vp = viewport(layout.pos.row = 4, layout.pos.col = 1:6))
+  } else {
+    pushViewport(viewport(layout = grid.layout(2, 7)))
+    print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:7))
+    print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:6))
+  }
+}
+@
+
+
+<<C670vsDepth, fig.cap="Beam attenuation from LISST", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=11>>=
+
+if (instrument$LISST == 1) {
+  Df.d = as.data.frame(cbind(-lisst.z.d, c670.d))
+  names(Df.d) <- c("Depth", "c670")
+  Df.fitted.d = as.data.frame(cbind(-z, c670.fitted.d))
+  names(Df.fitted.d) <- c("Depth", "c670")
+  p1 <- ggplot(data=Df.d, aes(x=c670, y=Depth)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Df.fitted.d, size=1.8)   + guides(colour=F)
+  p1 <- p1 + labs(x="Beam attenuation at 670 nm" , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+
+   if (LISST.UPCAST) {
+    Df.u = as.data.frame(cbind(-lisst.z.u, c670.u))
+    names(Df.u) <- c("Depth", "c670")
+    Df.fitted.u = as.data.frame(cbind(-z, c670.fitted.u))
+    names(Df.fitted.u) <- c("Depth", "c670")
+    p2 <- ggplot(data=Df.u, aes(x=c670, y=Depth)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Df.fitted.u, size=1.8)   + guides(colour=F)
+    p2 <- p2 + labs(x="Beam attenuation at 670 nm" , y="Depth (m)")
+   }
+
+  pushViewport(viewport(layout = grid.layout(1, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (LISST.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:6))
+}
+
+
+
+@
+
+
+
+\section{Fluorescence data}
+
+<<PrepareFluorescenceHS6, echo=FALSE, warning=FALSE>>=
+
+if (instrument$HS6 == 1) {
+
+    # Extract data from list to simplify the code
+    FDOM.fitted.down = IOP.fitted.down$HS6$FDOM
+    FCHL.fitted.down = IOP.fitted.down$HS6$FCHL
+    ix.down =   IOP$HS6$ixmin:IOP$HS6$ix.z.max
+    fluo.z.d = IOP$HS6$depth[ix.down]
+    FDOM.d = IOP$HS6$fluo[ix.down,1]
+    FCHL.d = IOP$HS6$fluo[ix.down,2]
+
+    if (HS6.UPCAST) {
+      FDOM.fitted.up = IOP.fitted.up$HS6$FDOM
+      FCHL.fitted.up = IOP.fitted.up$HS6$FCHL
+      ix.up = IOP$HS6$ix.z.max:IOP$HS6$ixmax
+      fluo.z.u = IOP$HS6$depth[ix.up]
+      FDOM.u = IOP$HS6$fluo[ix.up,1]
+      FCHL.u = IOP$HS6$fluo[ix.up,2]
+    }
+}
+@
+
+<<HS6fluoVSdepth, fig.cap="CDOM and Chlorophyll Fluorescence from Hydroscat-6", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=11>>=
+
+if (instrument$HS6 == 1) {
+
+  Df.d = as.data.frame(cbind(-fluo.z.d, FDOM.d))
+  names(Df.d) <- c("Depth", "FDOM")
+  Df.fitted.d = as.data.frame(cbind(-z, FDOM.fitted.down))
+  names(Df.fitted.d) <- c("Depth", "FDOM")
+  p1 <- ggplot(data=Df.d, aes(x=FDOM, y=Depth)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Df.fitted.d, size=1.8)   + guides(colour=F)
+  p1 <- p1 + labs(x="FDOM" , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+
+  if (HS6.UPCAST) {
+    Df.u = as.data.frame(cbind(-fluo.z.u, FDOM.u))
+    names(Df.u) <- c("Depth", "FDOM")
+    Df.fitted.u = as.data.frame(cbind(-z, FDOM.fitted.up))
+    names(Df.fitted.u) <- c("Depth", "FDOM")
+    p2 <- ggplot(data=Df.u, aes(x=FDOM, y=Depth)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Df.fitted.u, size=1.8)
+    p2 <- p2 + labs(x="FDOM", y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+  }
+
+  ######## Chlorophyll fluoresence
+  Df.d = as.data.frame(cbind(-fluo.z.d, FCHL.d))
+  names(Df.d) <- c("Depth", "FCHL")
+  Df.fitted.d = as.data.frame(cbind(-z, FCHL.fitted.down))
+  names(Df.fitted.d) <- c("Depth", "FCHL")
+  p3 <- ggplot(data=Df.d, aes(x=FCHL, y=Depth)) + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Df.fitted.d, size=1.8)   + guides(colour=F)
+  p3 <- p3 + labs(x="CHL fluorescence" , y="Depth (m)")
+
+  if (HS6.UPCAST) {
+    Df.u = as.data.frame(cbind(-fluo.z.u, FCHL.u))
+    names(Df.u) <- c("Depth", "FCHL")
+    Df.fitted.u = as.data.frame(cbind(-z, FCHL.fitted.up))
+    names(Df.fitted.u) <- c("Depth", "FCHL")
+    p4 <- ggplot(data=Df.u, aes(x=FCHL, y=Depth)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Df.fitted.u, size=1.8)   + guides(colour=F)
+    p4 <- p4 + labs(x="CHL fluorescence" , y="Depth (m)")
+  }
+
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (HS6.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:6))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+  if (HS6.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+
+}
+
+@
+
+<<PrepareFluorescenceFLECO, echo=FALSE, warning=FALSE>>=
+
+if (instrument$FLECO == 1) {
+
+    # Extract data from list to simplify the code
+    FDOM.fitted.down = IOP.fitted.down$FLECO$FL
+    ix.down =   IOP$FLECO$ixmin:IOP$FLECO$ix.z.max
+    fluo.z.d = IOP$FLECO$Depth[ix.down]
+    FDOM.d = IOP$FLECO$FL[ix.down,]
+
+    FLECO.UPCAST = !is.null(IOP.fitted.up$FLECO$FL)
+    if (FLECO.UPCAST) {
+      FDOM.fitted.up = IOP.fitted.up$FLECO$FL
+      ix.up = IOP$FLECO$ix.z.max:IOP$FLECO$ixmax
+      fluo.z.u = IOP$FLECO$Depth[ix.up]
+      FDOM.u = IOP$FLECO$FL[ix.up,]
+    }
+
+}
+@
+
+
+<<FLECOVSdepth, fig.cap="FDOM from Ecotriplet with excitation at 370 nm.", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=8>>=
+
+if (instrument$FLECO == 1) {
+  Df.d = as.data.frame(cbind(-fluo.z.d, FDOM.d[,3:1]))
+  names(Df.d) <- c("Depth", "500", "460", "420")
+  Dfm.d = melt(Df.d, id.vars = c("Depth"))
+  names(Dfm.d) = c("Depth", "Wavelength", "value" )
+
+
+  Df.fitted.d = as.data.frame(cbind(-z, FDOM.fitted.down[,3:1]))
+  names(Df.fitted.d) <- c("Depth", "500", "460", "420")
+  Dfm.fitted.d = melt(Df.fitted.d, id.vars = c("Depth"))
+  names(Dfm.fitted.d) = c("Depth", "Wavelength", "value" )
+  p1 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
+  p1 <- p1 + labs(x=expression(paste("FDOM")) , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+
+  if (FLECO.UPCAST) {
+    Df.u = as.data.frame(cbind(-fluo.z.u, FDOM.u[,3:1]))
+    names(Df.u) <- c("Depth", "500", "460", "420")
+    Dfm.u = melt(Df.u, id.vars = c("Depth"))
+    names(Dfm.u) = c("Depth", "Wavelength", "value" )
+    Df.fitted.u = as.data.frame(cbind(-z, FDOM.fitted.up[,3:1]))
+    names(Df.fitted.u) <- c("Depth", "500", "460", "420")
+    Dfm.fitted.u = melt(Df.fitted.u, id.vars = c("Depth"))
+    names(Dfm.fitted.u) = c("Depth", "Wavelength", "value" )
+
+    p2 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
+    p2 <- p2 + labs(x=expression(paste("FDOM")) , y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+
+  }
+
+  pushViewport(viewport(layout = grid.layout(1, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (FLECO.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:7))
+
+}
+
+@
+
+<<PrepareFluorescenceFLBBECO, echo=FALSE, warning=FALSE>>=
+
+if (instrument$FLBBCD == 1) {
+
+    # Extract data from list to simplify the code
+    ix.down =   IOP$FLBBCD$ixmin:IOP$FLBBCD$ix.z.max
+    FDOM.fitted.down = IOP.fitted.down$FLBBCD$FDOM
+    FCHL.fitted.down = IOP.fitted.down$FLBBCD$FCHL
+    fluo.z.d = IOP$FLBBCD$Depth[ix.down]
+    FDOM.d = IOP$FLBBCD$FDOM[ix.down]
+    FCHL.d = IOP$FLBBCD$FCHL[ix.down]
+
+    FLBBCD.UPCAST = !is.null(IOP.fitted.up$FLBBCD$FDOM)
+    if (FLBBCD.UPCAST) {
+      FDOM.fitted.up = IOP.fitted.up$FLBBCD$FDOM
+      FCHL.fitted.up = IOP.fitted.up$FLBBCD$FCHL
+      ix.up = IOP$FLBBCD$ix.z.max:IOP$FLBBCD$ixmax
+      fluo.z.u = IOP$FLBBCD$Depth[ix.up]
+      FDOM.u = IOP$FLBBCD$FDOM[ix.up]
+      FCHL.u = IOP$FLBBCD$FCHL[ix.up]
+    }
+}
+@
+
+
+<<FLBBCDVSdepth, fig.cap="FDOM and FCHL from ECO triplet.", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=8>>=
+
+
+if (instrument$FLBBCD == 1) {
+  Df.d = as.data.frame(cbind(-fluo.z.d, FDOM.d))
+  names(Df.d) <- c("Depth", "FDOM")
+  Df.fitted.d = as.data.frame(cbind(-z, FDOM.fitted.down))
+  names(Df.fitted.d) <- c("Depth", "FDOM")
+  p1 <- ggplot(data=Df.d, aes(x=FDOM, y=Depth)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Df.fitted.d, size=1.8)   + guides(colour=F)
+  p1 <- p1 + labs(x="FDOM" , y="Depth (m)")
+  p1 <- p1 + ggtitle("Down cast")
+
+   if (FLBBCD.UPCAST) {
+    Df.u = as.data.frame(cbind(-fluo.z.u, FDOM.u))
+    names(Df.u) <- c("Depth", "FDOM")
+    Df.fitted.u = as.data.frame(cbind(-z, FDOM.fitted.up))
+    names(Df.fitted.u) <- c("Depth", "FDOM")
+    p2 <- ggplot(data=Df.u, aes(x=FDOM, y=Depth)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Df.fitted.u, size=1.8)
+    p2 <- p2 + labs(x="FDOM", y="Depth (m)")
+    p2 <- p2 + ggtitle("Up cast")
+   }
+
+  ######## Chlorophyll fluoresence
+  Df.d = as.data.frame(cbind(-fluo.z.d, FCHL.d))
+  names(Df.d) <- c("Depth", "FCHL")
+  Df.fitted.d = as.data.frame(cbind(-z, FCHL.fitted.down))
+  names(Df.fitted.d) <- c("Depth", "FCHL")
+  p3 <- ggplot(data=Df.d, aes(x=FCHL, y=Depth)) + geom_point(size=1.)
+  p3 <- p3 + geom_point(data=Df.fitted.d, size=1.8)   + guides(colour=F)
+  p3 <- p3 + labs(x="CHL fluorescence" , y="Depth (m)")
+
+   if (FLBBCD.UPCAST) {
+    Df.u = as.data.frame(cbind(-fluo.z.u, FCHL.u))
+    names(Df.u) <- c("Depth", "FCHL")
+    Df.fitted.u = as.data.frame(cbind(-z, FCHL.fitted.up))
+    names(Df.fitted.u) <- c("Depth", "FCHL")
+    p4 <- ggplot(data=Df.u, aes(x=FCHL, y=Depth)) + geom_point(size=1.)
+    p4 <- p4 + geom_point(data=Df.fitted.u, size=1.8)   + guides(colour=F)
+    p4 <- p4 + labs(x="CHL fluorescence" , y="Depth (m)")
+   }
+
+  pushViewport(viewport(layout = grid.layout(2, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (FLBBCD.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:6))
+  print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1:3))
+  if (FLBBCD.UPCAST) print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 4:6))
+}
+
+@
+
+<<PrepareFluorescenceFLCHL, echo=FALSE, warning=FALSE>>=
+
+if (instrument$FLCHL == 1) {
+
+    # Extract data from list to simplify the code
+    ix.down =   IOP$FLCHL$ixmin:IOP$FLCHL$ix.z.max
+    FCHL.fitted.down = IOP.fitted.down$FLCHL$FCHL
+    fluo.z.d = IOP$FLCHL$Depth[ix.down]
+    FCHL.d = IOP$FLCHL$FCHL[ix.down]
+
+    FLCHL.UPCAST = !is.null(IOP.fitted.up$FLCHL$FCHL)
+    if (FLCHL.UPCAST) {
+      FCHL.fitted.up = IOP.fitted.up$FLCHL$FCHL
+      ix.up = IOP$FLCHL$ix.z.max:IOP$FLCHL$ixmax
+      fluo.z.u = IOP$FLCHL$Depth[ix.up]
+      FCHL.u = IOP$FLCHL$FCHL[ix.up]
+    }
+}
+@
+
+
+<<FLCHLVSdepth, fig.cap="CHL fluorescence from Wetlabs ECO meter.", echo=FALSE, fig.show='asis', warning=FALSE, fig.height=8>>=
+
+
+if (instrument$FLCHL == 1) {
+  ######## Chlorophyll fluoresence
+  Df.d = as.data.frame(cbind(-fluo.z.d, FCHL.d))
+  names(Df.d) <- c("Depth", "FCHL")
+  Df.fitted.d = as.data.frame(cbind(-z, FCHL.fitted.down))
+  names(Df.fitted.d) <- c("Depth", "FCHL")
+  p1 <- ggplot(data=Df.d, aes(x=FCHL, y=Depth)) + geom_point(size=1.)
+  p1 <- p1 + geom_point(data=Df.fitted.d, size=1.8)   + guides(colour=F)
+  p1 <- p1 + labs(x="CHL fluorescence" , y="Depth (m)")
+
+   if (FLCHL.UPCAST) {
+    Df.u = as.data.frame(cbind(-fluo.z.u, FCHL.u))
+    names(Df.u) <- c("Depth", "FCHL")
+    Df.fitted.u = as.data.frame(cbind(-z, FCHL.fitted.up))
+    names(Df.fitted.u) <- c("Depth", "FCHL")
+    p2 <- ggplot(data=Df.u, aes(x=FCHL, y=Depth)) + geom_point(size=1.)
+    p2 <- p2 + geom_point(data=Df.fitted.u, size=1.8)   + guides(colour=F)
+    p2 <- p2 + labs(x="CHL fluorescence" , y="Depth (m)")
+   }
+
+  pushViewport(viewport(layout = grid.layout(1, 7)))
+  print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1:3))
+  if (FLCHL.UPCAST) print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 4:6))
+}
+
+@
+
+
+
+\end{document}

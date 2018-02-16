@@ -28,4 +28,3 @@ calculate the Particles Size Distribution (PSD) and output a file
 \author{
 Simon Bélanger
 }
-

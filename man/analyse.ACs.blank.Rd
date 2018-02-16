@@ -40,4 +40,3 @@ included in the cal.info.dat (see \code{\link{correct.merge.IOP.profile}})
 \author{
 Simon Bélanger
 }
-

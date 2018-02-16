@@ -100,4 +100,3 @@ The processing parameters are stored in two ascii files named cast.info.dat
 \author{
 Simon Bélanger
 }
-

@@ -21,4 +21,3 @@ Read A-Sphere ASCII file as exported by IGOR software.
 \author{
 Simon Bélanger
 }
-

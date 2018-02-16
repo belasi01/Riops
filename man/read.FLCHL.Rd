@@ -18,4 +18,3 @@ Read a chlorophyll fluorescence (FLCHL) file
 \author{
 Simon Bélanger
 }
-

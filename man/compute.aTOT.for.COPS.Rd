@@ -46,11 +46,10 @@ correction.
 The pure water absorption is taken from a composite table
 (Kou etal 1993, Pope and Fry 1997, etc).
 }
-\author{
-Simon Bélanger
-}
 \seealso{
 \code{\link{correct.merge.IOP.profile}} and
 \code{\link{IOPs.go}}
 }
-
+\author{
+Simon Bélanger
+}

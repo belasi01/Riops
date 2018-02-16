@@ -9,4 +9,3 @@ spectral.cdom(wl, a.ref, wl.ref = 440, S = 0.018, K = 0)
 \description{
 Return CDOM spectra using exponential model
 }
-

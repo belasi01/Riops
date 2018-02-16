@@ -19,4 +19,3 @@ Read s Hydroscat-6 file
 \author{
 Simon Bélanger
 }
-

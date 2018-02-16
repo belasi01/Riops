@@ -18,4 +18,3 @@ Read s BB-9 file
 \author{
 Simon Bélanger
 }
-

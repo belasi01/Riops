@@ -19,4 +19,3 @@ Read an AC-s file
 \author{
 Simon Bélanger
 }
-

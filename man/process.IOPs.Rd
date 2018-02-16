@@ -15,11 +15,10 @@ instruments.dat. If they are not present in the directory, it
 creates a copy of the templates proveded with the package.
 Finaly it calls \code{\link{correct.merge.IOP.profile}}.
 }
-\author{
-Simon Bélanger
-}
 \seealso{
 \code{\link{correct.merge.IOP.profile}} and
 \code{\link{IOPs.go}}
 }
-
+\author{
+Simon Bélanger
+}

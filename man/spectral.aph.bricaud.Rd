@@ -2,15 +2,23 @@
 % Please edit documentation in R/spectral.aph.bricaud.R
 \name{spectral.aph.bricaud}
 \alias{spectral.aph.bricaud}
-\title{Compute spectral phyotplankton absorption
-using Bricaud et al (1995, 1998) statistics
-for case 1 waters}
+\title{Case-1 waters absorption coefficient for Particles and Phyotoplankton}
 \usage{
-spectral.aph.bricaud(wl, chl)
+spectral.aph.bricaud(waves, chl, PHYTO = TRUE)
+}
+\arguments{
+\item{waves}{is the wavelenght (could be a vector)}
+
+\item{chl}{is the chlorophyll-a concentration}
+
+\item{PHYTO}{is a logical to compute either phytoplankton
+or total particles coefficient. Default is PHYTO=TRUE to return the phytoplankton
+pigments spectrum.}
 }
 \description{
-Compute spectral phyotplankton absorption
-using Bricaud et al (1995, 1998) statistics
-for case 1 waters
+Compute spectral absorption coefficients for particles and phytoplankton
+using Bricaud et al (1995, 1998) statistics established for case 1 waters
 }
-
+\author{
+Simon Bélanger
+}

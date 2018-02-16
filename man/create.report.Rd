@@ -28,10 +28,9 @@ The Rnw files are converted into PDF using knitr package. Both files will
 be saved in dirdat and a "figures" folder is created with
 a PDF file for each figures found in the report.
 }
-\author{
-Simon Bélanger
-}
 \seealso{
 \code{\link{correct.merge.IOP.profile}}, \code{\link{IOPs.go}}
 }
-
+\author{
+Simon Bélanger
+}

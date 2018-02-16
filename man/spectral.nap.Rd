@@ -9,4 +9,3 @@ spectral.nap(wl, a.ref, wl.ref = 440, S = 0.018, K = 0)
 \description{
 Return non-algal particles (NAP) spectra using exponential model
 }
-

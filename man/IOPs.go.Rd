@@ -86,10 +86,9 @@ Please read \code{\link{correct.merge.IOP.profile}} for a detailed
 description of the content of cast.info.dat, cal.info.dat
 and DH4.ports.dat.
 }
-\author{
-Simon Bélanger
-}
 \seealso{
 \code{\link{correct.merge.IOP.profile}}, \code{\link{process.IOPs}}
 }
-
+\author{
+Simon Bélanger
+}

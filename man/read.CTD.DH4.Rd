@@ -19,4 +19,3 @@ in the DH4
 \author{
 Simon Bélanger
 }
-

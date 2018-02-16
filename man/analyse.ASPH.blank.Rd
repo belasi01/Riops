@@ -37,4 +37,3 @@ using RadSoft. This method allows the user to change the calibration files direc
 \author{
 Simon Bélanger
 }
-

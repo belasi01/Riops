@@ -18,4 +18,3 @@ Read an ECO triplet for CDOM fluorescence (FLECO) file
 \author{
 Simon Bélanger
 }
-

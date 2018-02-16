@@ -24,4 +24,3 @@ or higher (>201) include the Vin
 \author{
 Simon Bélanger
 }
-

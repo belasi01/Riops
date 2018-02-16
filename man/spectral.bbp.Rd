@@ -9,4 +9,3 @@ spectral.bbp(wl, bbp.ref = 0.004, wl.ref = 550, nu = 1)
 \description{
 Spectral backscattering coefficient
 }
-

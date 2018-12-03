@@ -100,7 +100,3 @@ read.ASPH <- function(filen, skip=0){
 
 }
 
-#file = "/data/CoteNord/Novembre/a-sphere/NAC1_05112010.txt"
-#file=file.choose()
-#data <- read_asphere(file)
-

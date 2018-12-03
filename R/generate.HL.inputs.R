@@ -28,7 +28,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No A-sphere data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Absorption.meter == "AC9") {
@@ -37,7 +37,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No AC9 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Absorption.meter == "ACS") {
@@ -46,7 +46,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No ACS data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   #####
@@ -56,7 +56,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No ACS data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Attenuation.meter == "AC9") {
@@ -65,7 +65,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No AC9 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Attenuation.meter == "BB9") {
@@ -76,7 +76,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No BB9 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Attenuation.meter == "BB3") {
@@ -87,7 +87,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No BB3 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Attenuation.meter == "HS6") {
@@ -98,7 +98,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No HS6 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   #####
@@ -108,7 +108,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No BB9 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Backscattering.meter == "BB3") {
@@ -117,7 +117,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No BB3 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   if (Backscattering.meter == "HS6") {
@@ -126,7 +126,7 @@ generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="
     } else {
       print("No HS6 data available in the IOP")
       print("Exiting the function")
-      exit(0)
+      return(0)
     }
   }
   #####

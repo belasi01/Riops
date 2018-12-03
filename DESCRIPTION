@@ -1,8 +1,8 @@
 Package: Riops
 Type: Package
 Title: IOPs data processing
-Version: 0.2-1
-Date: 2018-02-15
+Version: 0.3-1
+Date: 2018-12-03
 Author: Simon Belanger
 Maintainer: <simon_belanger@uqar.ca>
 Description: Routines to read and process IOPS from in-water optical packages

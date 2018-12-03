@@ -96,6 +96,7 @@
 #'
 correct.merge.IOP.profile <- function(instrument, parameters){
 
+  #######  Get prepared to process data #####
   print("Get prepared to process data")
   path =        parameters$path
   cast =        parameters$cast
@@ -162,8 +163,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   setwd(path)
 
-  ###################################################################################
-  #####
+  #######  Read all data#########
   print("Read all data")
 
   # This was added in order to process previous instrument file
@@ -381,9 +381,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     FLCHL = list()
   }
 
-  ###################################################################################
-
-  ########  Adjusting time stamp to each sensor; two cases are considered
+  #######  Adjusting time stamp to each sensor; two cases are considered####
   ########  for IML optical package and UQAR optical package
 
   if (instrument$CTD.DH4 == 1) {
@@ -580,8 +578,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   }
 
-  ############################## Add Depth to instruments without pressure sensors
-
+  #######  Add Depth to instruments without pressure sensors#####
   # Match BB9, BB3, FLBBCD, FLECO and ACs to obtain depth from the CTD using time stamp.
 
   if (instrument$ACS == 1 & !is.null(CTD$Time)) {
@@ -632,7 +629,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     FLCHL$Depth = predict(mod, FLCHL$Time)
   }
 
-  ############################## Add Temperature and/or Salinity to instruments for various correction
+  #######  Add Temperature and/or Salinity to instruments for various correction #####
 
   # Add Temperature and Salinity in the ACS file for TS correction
   if (instrument$ACS == 1 & !is.null(CTD$Time))  {
@@ -711,9 +708,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     FLBBCD$S = rep(Salinity, length(FLBBCD$Time))
   }
 
-  #########
-
-  ############################### Apply TS correction to ASPH and/or ACS ##############################
+  #######  Apply TS correction to ASPH and/or ACS ##############################
 
   if (instrument$ASPH == 1) {
     # create a matrix of coefficients for ASPH
@@ -764,9 +759,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     ACS$c.TScor = ACS$c - Tcor_factor - Scor_factor.c
     }
 
-  ########################################################################################################################
-
-  ############################## Apply blank correction to ASC and ASPH
+  #######  Apply blank correction to ASC and ASPH####
   if (instrument$ASPH == 1) {
 
     if (file.exists(parameters$blank.ASPH)){
@@ -948,7 +941,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   }
 
-  ############################## Apply blank and attenuation corrections to BB9
+  #######  Apply blank and attenuation corrections to BB9 #####
   if (instrument$BB9 ==1) {
 
     if (file.exists(parameters$blank.BB9)) {
@@ -1049,7 +1042,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 }
 
 
-  ############################## Apply blank and atteniation corrections to BB3
+  #######  Apply blank and attenuation corrections to BB3 #####
   if (instrument$BB3 ==1) {
 
     if (file.exists(parameters$blank.BB3)) {
@@ -1145,7 +1138,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   }
 
-  ############################# Apply attenuation correction to HS6 data
+  #######  Apply attenuation correction to HS6 data #####
 
   if (instrument$HS6 ==1) {
 
@@ -1249,7 +1242,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
 
 
-  #########################  Compute number of particules from LISST
+  #######  Compute number of particules from LISST #####
 
   if (instrument$LISST == 1) {
     print("compute number of particules")
@@ -1259,10 +1252,9 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   LISST$N_prime = (LISST$PSD*6)/pi/Dm^3
   }
-  ##################################################################################################################
-
+  
   print(paste("Bin the data at a given depth interval:", Zint))
-  ###### Select the portion of the profile to retain for depth interpolation
+  #######  Select the portion of the profile to retain for depth interpolation#####
   if (is.na(minx) & !is.null(CTD$Time)){
     plot(CTD$Time, CTD$Depth)
     print("Click for the begining of the cast and then ESC")
@@ -1322,7 +1314,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   depth.fitted=seq(Zint,z.max,Zint)
 
-  ###########################  Interpolate CTD data
+  #######  Interpolate CTD data ######
   if (!is.null(CTD$Time)) {
     print("Bin CTD....")
     CTD.fitted.down=list()
@@ -1358,7 +1350,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
 
 
-  ###########################  Interpolate ASPH data
+  #######  Interpolate ASPH data#####
   if (instrument$ASPH == 1) {
     print("Bin ASPH....")
     ASPH.fitted.down=list()
@@ -1415,7 +1407,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     ASPH.fitted.down = list()
     ASPH.fitted.up = list()
   }
-  ###########################  Interpolate ACS data
+  #######  Interpolate ACS data#####
   if (instrument$ACS == 1) {
     print("Bin ACS....")
     ACS.fitted.down=list()
@@ -1476,7 +1468,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     ACS.fitted.up = list()
   }
 
-  ###########################  Interpolate BB9 data
+  #######  Interpolate BB9 data#####
   if (instrument$BB9 == 1){
     print("Bin BB9....")
     BB9.fitted.down=list()
@@ -1565,7 +1557,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     BB9.fitted.up = list()
   }
 
-  ###########################  Interpolate BB3 data
+  #######  Interpolate BB3 data#####
   if (instrument$BB3 == 1){
     print("Bin BB3....")
     BB3.fitted.down=list()
@@ -1654,7 +1646,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
 
 
-  ###########################  Interpolate LISST data
+  #######  Interpolate LISST data#####
   if (instrument$LISST == 1){
     print("Bin LISST....")
     LISST.fitted.down=list()
@@ -1734,7 +1726,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     LISST.fitted.up=list()
   }
 
-  ###########################  Interpolate HS6 data
+  #######  Interpolate HS6 data######
   if (instrument$HS6 ==1) {
     print("Bin HS6....")
     HS6.fitted.down=list()
@@ -1907,7 +1899,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     HS6.fitted.up = list()
   }
 
-  ###########################  Interpolate FLECO data
+  #######  Interpolate FLECO data#####
   if (instrument$FLECO ==1) {
     print("Bin FLECO....")
     FLECO.fitted.down=list()
@@ -1959,7 +1951,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     FLECO.fitted.up = list()
   }
 
-  ###########################  Interpolate FLBBCD data
+  #######  Interpolate FLBBCD data #####
   if (instrument$FLBBCD ==1) {
     print("Bin FLBBCD....")
     FLBBCD.fitted.down=list()
@@ -2073,7 +2065,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     FLBBCD.fitted.up = list()
   }
 
-  ###########################  Interpolate FLCHL data
+  #######  Interpolate FLCHL data #####
   if (instrument$FLCHL ==1) {
     print("Bin FLCHL...")
     FLCHL.fitted.down=list()
@@ -2130,7 +2122,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
 
 
-  # PUT TOGETHER ALL PARAMETERS
+  #######  PUT TOGETHER ALL PARAMETERS######
   IOP = list(time.window=time.window, Time0.CTD = Time0.CTD,
              ASPH=ASPH, ACS=ACS, BB9=BB9, CTD=CTD, LISST=LISST,
              HS6=HS6, FLECO=FLECO, BB3=BB3, FLBBCD=FLBBCD, FLCHL=FLCHL)

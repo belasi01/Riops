@@ -149,14 +149,16 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     scat.correction = NA
   }
 
-  if (!is.null(parameters$HS6.CALYEAR)) {
+  if (!is.null(parameters$HS6.CALYEAR) & !is.na(parameters$HS6.CALYEAR)) {
     HS6.CALYEAR =   parameters$HS6.CALYEAR
+    print(paste("Hydroscat-6 calibration year is", HS6.CALYEAR))
   } else {
+    print(paste("No Hydroscat-6 calibration year provided"))
     if (instrument$HS6 == 1) {
       print("WARNING: HS-6 calibration year must be provided!!!")
       print("Add HS6.CALYEAR in the cal.info.dat file")
       print("Stop processing")
-      retrun(0)
+      return(0)
     }
     HS6.CALYEAR = NA
   }
@@ -506,8 +508,6 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       text(ASPH$time[ix.maxZ.ASPH], 0.8*ASPH$depth[ix.maxZ.ASPH],
            paste('Time diff:', as.character(signif(diffASPH,3))))
       dev.off()
-
-
     }
 
     if (instrument$HS6 == 1) {
@@ -575,7 +575,22 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   if (is.null(CTD$Time)) {
     print("No CTD data; no time to adjust")
-
+    
+    ### Check if HS6 and ASPH are present and adjust the depth... 
+    if (instrument$ASPH == 1 && instrument$HS6 == 1) {
+      ix.maxZ.ASPH = which.max(ASPH$depth)
+      ix.maxZ.HS6 = which.max(HS6$depth)
+      
+      diffASPH = difftime(HS6$Time[ix.maxZ.HS6], ASPH$time[ix.maxZ.ASPH], units="secs")
+      ASPH$time = ASPH$time + diffASPH 
+      
+      plot(ASPH$time, ASPH$depth, pch=19,cex=0.5, main="Check depth matching",
+           sub = "Adjust Time0.CTD in cast.info if needed")
+      points(HS6$Time, HS6$depth, col=2, pch=19, cex=0.2)
+      legend("topright", c("ASPH", "HS6"), col=c(1,2), pch=c(19,19))
+      text(ASPH$time[ix.maxZ.ASPH], 0.8*ASPH$depth[ix.maxZ.ASPH],
+           paste('Time diff:', as.character(signif(diffASPH,3))))
+    }
   }
 
   #######  Add Depth to instruments without pressure sensors#####
@@ -611,6 +626,35 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     names(df) = c("t","z")
     mod = loess(z ~ t, data=df, span=span.CTD)
     FLECO$Depth = predict(mod, FLECO$Time)
+  }
+  
+  if (instrument$FLECO == 1 & is.null(CTD$Time)) {
+    print("NO CTD available to set the depth to FLECO")
+    print("Check for depth from another instrument")
+    if (instrument$HS6 == 1) {
+      df = as.data.frame(cbind(HS6$Time, HS6$depth))
+      names(df) = c("t","z")
+      dt = difftime(max(HS6$Time), min(HS6$Time), units="secs")
+      # use a 10 seconds time window to define the span parameter
+      span.HS6 =    10 / as.numeric(dt)
+      mod = loess(z ~ t, data=df, span=span.HS6)
+      FLECO$Depth = predict(mod, FLECO$Time)
+    }
+    if (instrument$HS6 == 0 && instrument$ASPH == 1) {
+      df = as.data.frame(cbind(ASPH$time, ASPH$depth))
+      names(df) = c("t","z")
+      dt = difftime(max(ASPH$time), min(ASPH$time), units="secs")
+      # use a 10 seconds time window to define the span parameter
+      span.ASPH =    10 / as.numeric(dt)
+      mod = loess(z ~ t, data=df, span=span.ASPH)
+      FLECO$Depth = predict(mod, FLECO$Time)
+    }
+    if (instrument$HS6 == 0 && instrument$ASPH == 0) {
+      print("No depth sensor available for FLECO")
+      print("Set instrument to 0")
+      instrument$FLECO <- 0
+    }
+    
   }
 
   if (instrument$FLBBCD == 1 & !is.null(CTD$Time)) {
@@ -691,6 +735,19 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
 
   # This case exceptions have been writen to manage data with no CTD
+  if (instrument$ASPH == 1 & is.null(CTD$Time)) {
+    Salinity = as.numeric(readline("No CTD data; Enter a salinity value for beta correction of ASPH:  "))
+    ASPH$S = rep(Salinity, length(ASPH$time))
+    Temperature = as.numeric(readline("No CTD data; Enter a temperature value for beta correction of ASPH:  "))
+    ASPH$T = rep(Temperature, length(ASPH$time))
+  }
+  if (instrument$ACS == 1 & is.null(CTD$Time)) {
+    Salinity = as.numeric(readline("No CTD data; Enter a salinity value for beta correction of ACS:  "))
+    ACS$S = rep(Salinity, length(ACS$Time))
+    Temperature = as.numeric(readline("No CTD data; Enter a Temperature value for beta correction of ACS:  "))
+    ACS$T = rep(Temperature, length(ACS$Time))
+    
+  }
   if (instrument$HS6 == 1 & is.null(CTD$Time)) {
     Salinity = as.numeric(readline("No CTD data; Enter a salinity value for beta correction of HS6:  "))
     HS6$S = rep(Salinity, length(HS6$Time))
@@ -1145,10 +1202,12 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     print("Apply attenuation correction to HS6")
 
     # FROM CALIBRATION FILE
+    
     if (HS6.CALYEAR == 2010) Sigmaexp <- c(0.139, 0.142, 0.146, 0.143, 0.146, 0.146)
     if (HS6.CALYEAR == 2013) Sigmaexp <- c(0.135, 0.141, 0.143, 0.14, 0.142, 0.144)
     if (HS6.CALYEAR == 2014) Sigmaexp <- c(0.137, 0.139, 0.144, 0.141, 0.141, 0.143)
     if (HS6.CALYEAR == 2016) Sigmaexp <- c(0.137, 0.141, 0.145, 0.14, 0.144, 0.144)
+    if (HS6.CALYEAR == 2018) Sigmaexp <- c(0.137, 0.142, 0.144, 0.141, 0.143, 0.145)
 
     Sigmaexp.m = matrix(Sigmaexp, nrow=length(HS6$depth), ncol=length(HS6$wl), byrow=T)
 

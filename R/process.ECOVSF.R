@@ -11,15 +11,16 @@
 #' @param G.Anw Non-water absorption for the 532 nm band
 #' (Default = NA; no correction applied)
 #' @param Salinity Salinity (Default = 0)
-#' @param start is the begining of the cast in second. 
+#' @param start is the begining of the cast in seconds. 
 #' If 999 then the user is prompt to click on the plot of 
-#' VSF versus Time to choose the start and the end of the cast.
+#' VSF versus Time to choose the start and the end of the cast interactively.
 #' (Default = 1)
-#' @param end if the end of the cast in second. If 999 then it takes
+#' @param end is the end of the cast in second. If 999 then it takes
 #' the end of the cast. (Default = 999)     
 #'
 #' @author Simon Bélanger
-
+#' @export
+#'
 
 process.ECOVSF <- function(eco,
                            station=NA,
@@ -70,12 +71,7 @@ process.ECOVSF <- function(eco,
     G.Beta = G.Betau.mean*exp(G.Anw*pathlengh.ECO)
     ABS.COR = TRUE
   }
-  
-  
-    
-  
-  
-  
+
   ###### Integrate the VSF
   # bb= 2pi * integrate(beta*sin(angle))
   rad.angle = c(100,125,150,180)*pi/180

@@ -478,6 +478,8 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       Time0.CTD = CTD$Time[1]
       diffCTD = difftime(CTD$Time[1], Time0.CTD, units="secs") # so difftime ==0
     }
+    print(diffCTD)
+    CTD$Time <- CTD$Time + diffCTD
     ix.maxZ.CTD = which.max(CTD$Depth)
     #print("Correct time difference based on the time when each instruments hit the water")
     #plot(CTD$Time, CTD$Depth)
@@ -491,7 +493,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       ix.maxZ.ASPH = which.max(ASPH$depth)
       #diffASPH = difftime(CTD$Time[ixCTD], ASPH$time[ixASPH], units="secs")
       diffASPH = difftime(CTD$Time[ix.maxZ.CTD], ASPH$time[ix.maxZ.ASPH], units="secs")
-      ASPH$time = ASPH$time + diffASPH + diffCTD
+      ASPH$time = ASPH$time + diffASPH 
 
       plot(ASPH$time, ASPH$depth, pch=19,cex=0.5, main="Check depth matching",
            sub = "Adjust Time0.CTD in cast.info if needed")
@@ -515,10 +517,14 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       ix.maxZ.HS6 = which.max(HS6$depth)
 
       diff.z = abs(HS6$depth[ix.maxZ.HS6] - CTD$Depth[ix.maxZ.CTD])
+      
+#      diffHS6 = difftime(CTD$Time[ix.maxZ.CTD], HS6$Time[ix.maxZ.HS6], units="secs")
+#      print(diffHS6)
+#      HS6$Time = HS6$Time + diffHS6 + diffCTD
+      
       if (diff.z < 1) {
         diffHS6 = difftime(CTD$Time[ix.maxZ.CTD], HS6$Time[ix.maxZ.HS6], units="secs")
-        HS6$Time = HS6$Time + diffHS6 + diffCTD
-
+        HS6$Time = HS6$Time + diffHS6 
       } else {
         print("Correct time difference based on the time when each instruments hit the water")
         plot(HS6$Time, HS6$depth)

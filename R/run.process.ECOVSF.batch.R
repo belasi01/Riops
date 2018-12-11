@@ -7,7 +7,7 @@
 #' @param dev.file is the Wetlabs device file
 #' 
 #' @details The most important thing to do before runing this programm is to prepare
-#' the log.file. This file contains 7 fields : 
+#' the log.file. This file contains 11 fields : 
 #' Eco.filename Station Date Depth B.Anw G.Anw Salinity dark.file start end process
 #' 
 #'

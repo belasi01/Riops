@@ -2,13 +2,16 @@
 #' 
 #' 
 #' 
-apply.ECOVSF.cal <- function(eco, dev.file=NA, dark.file=NA) {
+apply.ECOVSF.cal <- function(eco, 
+                             dev.file=NA, 
+                             dark.file=NA) {
   
   if (is.na(dev.file)) {
     print("No device file provided")
     print("Abort processing")
     return(0)
-  } else {
+  } 
+  else {
     print(paste("Reading the device file", dev.file))
     cal <- read.vsf3.dev.file(dev.file)
     print(cal)
@@ -35,7 +38,8 @@ apply.ECOVSF.cal <- function(eco, dev.file=NA, dark.file=NA) {
     G.offset = matrix(G.offset.dark, nrow=eco$nrec, ncol=3, byrow=T)
     
     dark.offset = TRUE
-  } else {
+  } 
+  else {
     print("Use offsets from calibration")
     dark.offset = FALSE
   }
@@ -47,7 +51,6 @@ apply.ECOVSF.cal <- function(eco, dev.file=NA, dark.file=NA) {
     B.Betau = (B.raw - B.offset)*B.scaling.factor
     
     ## Apply calibration to Green  
-    
     G.raw = cbind(eco$raw$G100,eco$raw$G125,eco$raw$G150)
     G.Betau = (G.raw - G.offset)*G.scaling.factor
     

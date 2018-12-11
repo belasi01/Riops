@@ -4,13 +4,15 @@
 \alias{read.BB9}
 \title{Read s BB-9 file}
 \usage{
-read.BB9(filen)
+read.BB9(filen, raw = FALSE)
 }
 \arguments{
 \item{filen}{is a BB-9 file name}
+
+\item{raw}{if a logical parameter indicating whether the file is in raw count}
 }
 \value{
-A list with Timer, Beta, BetaP, bbP, bb, wl
+If calibration already apply, it returns a list with Timer, Beta, BetaP, bbP, bb, wl
 }
 \description{
 Read s BB-9 file

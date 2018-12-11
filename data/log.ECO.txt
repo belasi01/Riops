@@ -1,0 +1,1 @@
+ECO.filename; dev.file; ECO.type; ECO.bands; Station; Date; UTCTime; Depth; Salinity; dark.file; start; end; process; Anw1; Anw2; Anw3; Anw4; Anw5; Anw6; Anw7; Anw8; Anw9

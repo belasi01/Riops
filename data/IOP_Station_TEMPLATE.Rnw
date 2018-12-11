@@ -35,9 +35,9 @@ instrument = list(HS6=<%=HS6%>, FLECO=<%=FLECO%>,  ASPH=<%=ASPH%>, ACS=<%=ACS%>,
 
 minbb = 0
 maxbb =<%=maxbb%>
-load(file=paste("<%=dirdat%>","IOP.RData",sep=""))
-load(file=paste("<%=dirdat%>","IOP.fitted.down.RData",sep=""))
-load(file=paste("<%=dirdat%>","IOP.fitted.up.RData",sep=""))
+load(file=paste("<%=dirdat%>","IOP.RData",sep="/"))
+load(file=paste("<%=dirdat%>","IOP.fitted.down.RData",sep="/"))
+load(file=paste("<%=dirdat%>","IOP.fitted.up.RData",sep="/"))
 
 z = IOP.fitted.down$Depth
 nz <-  length(z)

@@ -17,7 +17,7 @@ read.CTD <- function(filen){
   names(df) <- c("Temp", "Tpot","Depth", "Sal", "Time","Density", "Voltage")
 
   # Change the system time format
-  Sys.setlocale("LC_TIME","en_IE.UTF-8")
+  Sys.setlocale("LC_TIME","C")
   df$Time = as.POSIXct(as.character(df$Time),format="%d %B %Y %T", tz="GMT" )
 
   CTD = list(Time=df$Time, Temp=df$Temp, Depth=df$Depth, Sal=df$Sal,

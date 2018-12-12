@@ -42,7 +42,7 @@ read.ACs <- function(filen){
   close(id)
 
   # Read data
-  df = read.table(fn, header=T, skip=nrec)
+  df = read.table(filen, header=T, skip=nrec)
 
   Timer = df$Time.ms.
   c = as.matrix(df[,2:(nwaves+1)])

@@ -4,7 +4,7 @@
 #'
 #' @return A list with Timer, Beta, BetaP, bbP, bb, wl
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

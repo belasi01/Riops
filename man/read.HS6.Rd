@@ -17,5 +17,5 @@ fluo,fluou,betafl
 Read s Hydroscat-6 file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

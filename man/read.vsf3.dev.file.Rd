@@ -16,5 +16,5 @@ A dataframe
 Read a WetLabs Device file for ECO-VSF3
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

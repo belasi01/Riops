@@ -1,5 +1,4 @@
-#'
-#'@title Pure water absorption spectrum
+#' Pure water absorption spectrum
 #'
 #'
 #'@description Compute spectral absorption coefficient for pure water from 280 to 900 nm
@@ -9,7 +8,7 @@
 #' @param waves is the wavelenght (could be a vector)
 #' @param MOREL is a logical to compute pure water absorption from Morel 1988 table.
 #'
-#'@author Simon Bélanger
+#'@author Simon Belanger
 #'
 #'@export
 spectral.aw  <- function(waves, MOREL=FALSE)

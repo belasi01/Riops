@@ -6,7 +6,7 @@
 #' (Default is "BG")
 #' @return A dataframe with the raw data 
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #' 
 read.ECOVSF<- function(eco.file, ECO.bands="BG"){

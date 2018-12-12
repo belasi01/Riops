@@ -17,5 +17,5 @@ from Pope and Fry 1997 and Buiteveld 1994 experiments.
 Optionnaly, K_w from Morel 1988 minus b_bw can be requested
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

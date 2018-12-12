@@ -2,7 +2,7 @@
 % Please edit documentation in R/run.process.ECO.batch.R
 \name{run.process.ECO.batch}
 \alias{run.process.ECO.batch}
-\title{Run batch processing for ECO meter data in raw format.}
+\title{Run batch processing to convert ECO meter data in raw format to backscattering coefficients.}
 \usage{
 run.process.ECO.batch(log.file = "log.txt", data.path = "./")
 }
@@ -17,12 +17,13 @@ The processing includes the application of the calibration coefficients to conve
  The dark offsets may be taken from the calibration file (device file) or from the dark measurements taken on the field. 
  Next, if absorption coefficients are provided, the VSF is corrected for loss of photons 
  due to attenuation along the pathlength. 
- The VSF in finaly converted in to total backscattering and particles backscattering.
+ The VSF is finaly converted in to total backscattering and particles backscattering.
 }
 \details{
 The most important thing to do before runing this programm is to prepare
 the log.file. This file contains fields (semi-column delimiter) : 
-ECO.filename dev.file ECO.type ECO.bands Station Date  Depth Salinity dark.file start end process Anw1..AnwX
+ECO.filename; dev.file; ECO.type; ECO.bands; Station; Date; UTCTime; 
+Depth; Salinity; dark.file; start; end; process; Anw1;..;AnwX
 The ASCII files are:
 \itemize{
  \item{ECO.filename: }{is the file name of an ECO file without the path. It must be put in a sub-folder named raw/ in the data.path;}
@@ -50,6 +51,6 @@ the end of the cast.}
  
  The code will process each file one by one and will output a RData file for each raw file processed. 
  
- @author  Simon Bélanger
+ @author  Simon Belanger
  @export
 }

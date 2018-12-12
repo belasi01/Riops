@@ -10,7 +10,7 @@
 #' @seealso \code{\link{correct.merge.IOP.profile}} and
 #' \code{\link{IOPs.go}}
 #'
-#' @author Simon Bélanger
+#' @author Simon B\elanger
 #' @export
 
 process.IOPs <- function(dirdat) {

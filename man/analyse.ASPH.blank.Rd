@@ -35,5 +35,5 @@ NOTE: In September 2015, Hobi Service issued a new method to perform a pure wate
 using RadSoft. This method allows the user to change the calibration files directly.
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

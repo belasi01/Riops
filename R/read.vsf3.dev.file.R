@@ -4,7 +4,7 @@
 #'
 #' @return A dataframe
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 read.vsf3.dev.file <- function (filen) {

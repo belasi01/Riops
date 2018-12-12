@@ -16,5 +16,5 @@ A list with FL, ex, em, TempIntrument
 Read an ECO triplet for CDOM fluorescence (FLECO) file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

@@ -4,7 +4,7 @@
 #'
 #' @return A dataframe with the calibrated data 
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #' 
 read.ECOVSF.ISMER <- function(eco.file){

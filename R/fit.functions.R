@@ -1,9 +1,12 @@
+#' A modified version of the loess adapted to spectral data. 
+#' 
+#' 
+#' 
 fit.with.loess <- function(waves, Depth, aop, span, depth.fitted, span.wave.correction = FALSE, verbose=FALSE) {
-	#browser()
+  
   aop.fitted <- array(NA, dim = c(length(depth.fitted), ncol(aop)), dimnames = list(depth.fitted, colnames(aop)))
 	aop.0 <- vector(mode = "numeric", length = ncol(aop))
 	for (i in 1:length(waves)) {
-    #print(i)
 		if(span.wave.correction) {
 			span.w.corr <- min(650 / waves[i], 1)
       if (waves[i] < 420) {
@@ -13,12 +16,8 @@ fit.with.loess <- function(waves, Depth, aop, span, depth.fitted, span.wave.corr
 			 span.w.corr <- 1
 		}
 
-	  #### Check if there is any good data
-	  # Added by Simon Bélanger, 2016-02-11
-
-		 if (all(is.infinite(aop[,i]) | is.na(aop[,i]))) {
+		if (all(is.infinite(aop[,i]) | is.na(aop[,i]))) {
       print(paste("No valid data at: ", waves[i]))
-
 		 } else {
 		   ix.good = which(!is.infinite(aop[,i]) & !is.na(aop[,i]))
 		   if (length(ix.good)> 3 ) { # ADDED

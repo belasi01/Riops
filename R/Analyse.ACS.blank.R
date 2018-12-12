@@ -23,10 +23,13 @@
 #' @return It returns a list with a.mean, a.smooth, a.sd,
 #' c.mean, c.smooth, c.sd, c.wl, a.wl
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
-#'
-analyse.ACs.blank <- function (Twater = 19, Tref = 20.3, AC=TRUE) {
+#' 
+
+analyse.ACs.blank <- function (Twater = 19, 
+                               Tref = 20.3, 
+                               AC=TRUE) {
 
 
   delta_T = (Twater-Tref)

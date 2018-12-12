@@ -5,7 +5,7 @@
 #' 
 #' @return If calibration already apply, it returns a list with Timer, Beta, BetaP, bbP, bb, wl
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

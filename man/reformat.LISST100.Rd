@@ -26,5 +26,5 @@ calculate the Particles Size Distribution (PSD) and output a file
 *.asc. The *.asc file can be read by \code{\link{read.LISST}}.
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

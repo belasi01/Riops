@@ -16,5 +16,5 @@ A dataframe with the calibrated data
 Read the ISMER ECO-VSF data
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

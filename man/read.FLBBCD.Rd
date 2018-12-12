@@ -17,5 +17,5 @@ bbP700, bb700, FCHL, FDOM
 Read an ECO triplet for chlrophyll, bb700 and cdom (FLBBCD) file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

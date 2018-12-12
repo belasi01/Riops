@@ -5,7 +5,7 @@
 #' @return A list with time, Depth, PSD, lower_size_bins, upper_size_bins,
 #' median_bins,temperature, transsmision, c670
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

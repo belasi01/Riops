@@ -16,5 +16,5 @@ A list with Timer and FCHL
 Read a chlorophyll fluorescence (FLCHL) file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

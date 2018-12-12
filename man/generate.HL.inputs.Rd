@@ -6,8 +6,8 @@
 \usage{
 generate.HL.inputs(IOP, Absorption.meter = "ASPH",
   Attenuation.meter = "HS6", Backscattering.meter = "HS6",
-  bbp.tilde = 0.018, waves = seq(400, 700, 5), Zmax = 50, delta.Z = 1,
-  Station = "ST")
+  bbp.tilde = 0.018, waves = seq(400, 700, 5), Zmax = 50,
+  delta.Z = 1, Station = "ST")
 }
 \arguments{
 \item{IOP}{is a list returned by the function \code{\link{correct.merge.IOP.profile}}.}
@@ -37,4 +37,7 @@ Default is bbp.tilde=0.018  (i.e. from Petzold VSF)}
 }
 \description{
 Produce Hydrolight-compatible input files for RTE simulations using measured IOPs
+}
+\author{
+Simon Belanger
 }

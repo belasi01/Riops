@@ -17,5 +17,5 @@ Read a CTD file in ASCII format as recorded
 in the DH4
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

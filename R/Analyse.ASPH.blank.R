@@ -20,7 +20,7 @@
 #'
 #' @return It returns a list with mean, smooth, sd
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 analyse.ASPH.blank <- function(filen, Twater=13.2, Tref=19) {

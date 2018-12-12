@@ -7,7 +7,7 @@
 #'  @return A list with time, depth, Vin and wl vector and a matrix
 #'   a containing the spectral absorption.
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 read.ASPH <- function(filen, skip=0){

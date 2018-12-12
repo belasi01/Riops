@@ -4,7 +4,7 @@
 #'
 #' @return A list with FL, ex, em, TempIntrument
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

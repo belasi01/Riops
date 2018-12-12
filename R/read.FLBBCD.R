@@ -5,7 +5,7 @@
 #' @return A list with Timer, Beta700, BetaP700,
 #' bbP700, bb700, FCHL, FDOM
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

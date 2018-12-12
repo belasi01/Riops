@@ -16,6 +16,8 @@
 #'@param Zmax is the maximum depth to include in the output file
 #'@param delta.Z is the depth interval
 #'@param Station is the station ID
+#'@author Simon Belanger
+#'@export
 
 generate.HL.inputs <- function(IOP, Absorption.meter="ASPH", Attenuation.meter="HS6", Backscattering.meter="HS6",
                                bbp.tilde=0.018, waves=seq(400,700,5), Zmax=50, delta.Z=1, Station="ST") {

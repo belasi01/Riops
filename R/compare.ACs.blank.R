@@ -10,7 +10,7 @@
 #'
 #' @details The user will prompt to select the files manually.
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

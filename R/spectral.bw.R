@@ -1,4 +1,3 @@
-#'
 #'@title Pure water scattering coefficient spectrum
 #'
 #'
@@ -6,9 +5,13 @@
 #'
 #' @param waves is the wavelenght (could be a vector)
 #'
-#'@author Simon Bélanger
+#'@author Simon Belanger
 #'
 #'@export
+#'
+#'
+#'
+#'
 
 spectral.bw <- function(waves)
 {

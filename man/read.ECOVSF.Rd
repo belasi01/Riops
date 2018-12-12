@@ -20,5 +20,5 @@ A dataframe with the raw data
 Read the  ECO-VSF data
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

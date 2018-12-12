@@ -4,7 +4,7 @@
 #'
 #' @return A list with Timer and FCHL
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

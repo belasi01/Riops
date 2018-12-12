@@ -42,7 +42,7 @@
 #'  
 #'  The code will process each file one by one and will output a RData file for each raw file processed. 
 #'  
-#'  @author  Simon Bélanger
+#'  @author  Simon Belanger
 #'  @export
 #'  
 run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){

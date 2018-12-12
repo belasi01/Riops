@@ -22,7 +22,7 @@
 #'a PDF file for each figures found in the report.
 #'
 #'@seealso \code{\link{correct.merge.IOP.profile}}, \code{\link{IOPs.go}}
-#'@author Simon Bélanger
+#'@author Simon Belanger
 #'@export
 
 create.report <- function(dirdat){

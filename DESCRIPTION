@@ -10,4 +10,4 @@ License: NO
 LazyData: TRUE
 Depends:
     stringr,brew,knitr,oce,xtable,ggplot2,reshape2,maps,grid
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

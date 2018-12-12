@@ -22,5 +22,5 @@ the ACs over time.
 The user will prompt to select the files manually.
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

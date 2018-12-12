@@ -12,7 +12,7 @@
 #' 
 #' @return It returns a list with raw data and calibrated VSF (uncorrected). 
 #' 
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #' 
 apply.ECO.cal <- function(raw, 

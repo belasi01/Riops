@@ -36,7 +36,7 @@
 #' @seealso \code{\link{correct.merge.IOP.profile}} and
 #' \code{\link{IOPs.go}}
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 compute.aTOT.for.COPS <- function(pathIOP=".", cast="down", depth.interval=c(0.75,2.1), instrument = "ASPH") {

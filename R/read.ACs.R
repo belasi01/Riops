@@ -5,7 +5,7 @@
 #' @return A list with Timer, c.wl, a.wl, c, a,
 #' iTemp, Sal, Depth, XTemp, Cond
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 

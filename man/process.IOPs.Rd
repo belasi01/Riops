@@ -20,5 +20,5 @@ Finaly it calls \code{\link{correct.merge.IOP.profile}}.
 \code{\link{IOPs.go}}
 }
 \author{
-Simon Bélanger
+Simon B\elanger
 }

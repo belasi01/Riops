@@ -90,5 +90,5 @@ and DH4.ports.dat.
 \code{\link{correct.merge.IOP.profile}}, \code{\link{process.IOPs}}
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

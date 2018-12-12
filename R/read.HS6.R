@@ -5,7 +5,7 @@
 #' @return A list with Time, depth, wl,bb, bbu,beta,betau,
 #' fluo,fluou,betafl
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 read.HS6 <- function(filen)

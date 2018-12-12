@@ -13,5 +13,5 @@ spectral.bw(waves)
 Compute spectral scattering coefficient for pure water Morel 1974 (as summarized by Mobley 1994)
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

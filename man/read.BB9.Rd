@@ -18,5 +18,5 @@ If calibration already apply, it returns a list with Timer, Beta, BetaP, bbP, bb
 Read s BB-9 file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

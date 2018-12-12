@@ -40,5 +40,5 @@ the end of the cast. (Default = 999)}
 Backscattering processing from ECO sensor at discrete depth
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

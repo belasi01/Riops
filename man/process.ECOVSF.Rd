@@ -37,5 +37,5 @@ the end of the cast. (Default = 999)}
 ECO-VSF processing for discrete depth (or profile sampling not implemented yet)
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

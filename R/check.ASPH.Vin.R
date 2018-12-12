@@ -11,7 +11,7 @@
 #'
 #' @return A plot showing Vin as a function of time.
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 check.ASPH.Vin <- function(filen) {

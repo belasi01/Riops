@@ -51,5 +51,5 @@ The pure water absorption is taken from a composite table
 \code{\link{IOPs.go}}
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

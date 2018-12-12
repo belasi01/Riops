@@ -75,7 +75,7 @@
 #'
 #'@seealso \code{\link{correct.merge.IOP.profile}}, \code{\link{process.IOPs}}
 #'
-#'@author Simon Bélanger
+#'@author Simon Belanger
 #'
 #'@export
 

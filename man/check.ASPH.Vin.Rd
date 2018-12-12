@@ -22,5 +22,5 @@ template version "a-Sphere Processing Template 201.pxt"
 or higher (>201) include the Vin
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

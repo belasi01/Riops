@@ -19,5 +19,5 @@ This was added to deal with files containing several casts.
 Read A-Sphere ASCII file as exported by IGOR software.
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

@@ -16,5 +16,5 @@ A list with Timer, Beta, BetaP, bbP, bb, wl
 Read s BB-3 file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

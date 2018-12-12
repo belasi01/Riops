@@ -32,5 +32,5 @@ a PDF file for each figures found in the report.
 \code{\link{correct.merge.IOP.profile}}, \code{\link{IOPs.go}}
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

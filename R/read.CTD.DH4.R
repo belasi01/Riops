@@ -7,7 +7,7 @@
 #'
 #' @return A list with Timer, Temp, Cond, Depth, Sal
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

@@ -20,5 +20,5 @@ the ECO serial number and the data of the calibration.
 Read a WetLabs Device file for ECO meter (VSF3, BB9, BB3)
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

@@ -17,5 +17,5 @@ median_bins,temperature, transsmision, c670
 Read s LISST file in format *.asc
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

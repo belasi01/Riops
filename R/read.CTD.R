@@ -7,7 +7,7 @@
 #' @return A list with Time, Temp, Depth, Sal,
 #' Density, Voltage, Tpot
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 

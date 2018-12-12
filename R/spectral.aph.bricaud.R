@@ -1,6 +1,4 @@
-#'
-#'@title Case-1 waters absorption coefficient for Particles and Phyotoplankton
-#'
+#' Case-1 waters absorption coefficient for Particles and Phyotoplankton
 #'
 #'@description Compute spectral absorption coefficients for particles and phytoplankton
 #' using Bricaud et al (1995, 1998) statistics established for case 1 waters
@@ -12,7 +10,7 @@
 #' pigments spectrum.
 #'
 #'
-#'@author Simon Bélanger
+#'@author Simon Belanger
 #'
 #'@export
 

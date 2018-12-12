@@ -89,7 +89,7 @@
 #'    }
 #'
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #'
 #' @export
 #'

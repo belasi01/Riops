@@ -17,5 +17,5 @@ iTemp, Sal, Depth, XTemp, Cond
 Read an AC-s file
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

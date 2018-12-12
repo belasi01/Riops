@@ -17,7 +17,7 @@
 #' @return It returns the matrix with 40 columns that have been
 #' converted into binary.
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 #'
 reformat.LISST100 <-function(filen) {

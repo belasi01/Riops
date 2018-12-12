@@ -17,5 +17,5 @@ Density, Voltage, Tpot
 Read a CTD SBE19+ file in ASCII format as recorded in the MiniDAS
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

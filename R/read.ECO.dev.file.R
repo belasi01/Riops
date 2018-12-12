@@ -7,7 +7,7 @@
 #' @return A list including a dataframe for the calibration coefficients, 
 #' the ECO serial number and the data of the calibration.
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export
 
 read.ECO.dev.file <- function (filen, ECO.type="VSF3") {

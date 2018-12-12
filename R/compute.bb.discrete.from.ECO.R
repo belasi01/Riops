@@ -19,7 +19,7 @@
 #' @param end is the end of the cast in second. If 999 then it takes
 #' the end of the cast. (Default = 999)     
 #'
-#' @author Simon Bélanger
+#' @author Simon Belanger
 #' @export 
 
 compute.bb.discrete.from.ECO <- function(eco,

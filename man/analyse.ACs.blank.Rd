@@ -38,5 +38,5 @@ in \code{\link{correct.merge.IOP.profile}}. The path of the file need to be
 included in the cal.info.dat (see \code{\link{correct.merge.IOP.profile}})
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

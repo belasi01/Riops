@@ -29,5 +29,5 @@ It returns a list with raw data and calibrated VSF (uncorrected).
 Apply ECOVSF calibration
 }
 \author{
-Simon Bélanger
+Simon Belanger
 }

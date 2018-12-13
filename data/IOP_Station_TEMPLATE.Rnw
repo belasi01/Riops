@@ -24,6 +24,7 @@
 <<options, echo=FALSE, warning=FALSE, results='hide', cache.lazy=FALSE, message=FALSE>>=
 options(prompt = " ", continue = " ", width = 85)
 opts_chunk$set(concordance=TRUE, fig.pos='H')
+library(Riops)
 @
 
 

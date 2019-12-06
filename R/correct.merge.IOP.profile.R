@@ -480,19 +480,32 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     }
     print(diffCTD)
     CTD$Time <- CTD$Time + diffCTD
-    ix.maxZ.CTD = which.max(CTD$Depth)
-    #print("Correct time difference based on the time when each instruments hit the water")
-    #plot(CTD$Time, CTD$Depth)
-    #print("Click for the CTD time stamp")
-    #ixCTD = identify(CTD$Time, CTD$Depth)
+    
+    #### modification for processing time series 
+    if (parameters$timeserie == 1) {
+      print("Correct time difference based on the time when each instruments hit the water")
+      plot(CTD$Time, CTD$Depth)
+      print("Click for the CTD time stamp")
+      ixCTD = identify(CTD$Time, CTD$Depth)
+    } else {
+      ix.maxZ.CTD = which.max(CTD$Depth)  
+    } 
+    
+  
 
     if (instrument$ASPH == 1) {
-      #plot(ASPH$time, ASPH$depth)
-      #print("Click for the ASPH time stamp")
-      #ixASPH = identify(ASPH$time, ASPH$depth)
+      
       ix.maxZ.ASPH = which.max(ASPH$depth)
-      #diffASPH = difftime(CTD$Time[ixCTD], ASPH$time[ixASPH], units="secs")
-      diffASPH = difftime(CTD$Time[ix.maxZ.CTD], ASPH$time[ix.maxZ.ASPH], units="secs")
+      
+      if (parameters$timeserie == 1) {
+        plot(ASPH$time, ASPH$depth)
+        print("Click for the ASPH time stamp")
+        ixASPH = identify(ASPH$time, ASPH$depth)
+        diffASPH = difftime(CTD$Time[ixCTD], ASPH$time[ixASPH], units="secs")
+      } else {
+        diffASPH = difftime(CTD$Time[ix.maxZ.CTD], ASPH$time[ix.maxZ.ASPH], units="secs")
+      } 
+
       ASPH$time = ASPH$time + diffASPH 
 
       plot(ASPH$time, ASPH$depth, pch=19,cex=0.5, main="Check depth matching",
@@ -515,17 +528,8 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     if (instrument$HS6 == 1) {
 
       ix.maxZ.HS6 = which.max(HS6$depth)
-
-      diff.z = abs(HS6$depth[ix.maxZ.HS6] - CTD$Depth[ix.maxZ.CTD])
       
-#      diffHS6 = difftime(CTD$Time[ix.maxZ.CTD], HS6$Time[ix.maxZ.HS6], units="secs")
-#      print(diffHS6)
-#      HS6$Time = HS6$Time + diffHS6 + diffCTD
-      
-      if (diff.z < 1) {
-        diffHS6 = difftime(CTD$Time[ix.maxZ.CTD], HS6$Time[ix.maxZ.HS6], units="secs")
-        HS6$Time = HS6$Time + diffHS6 
-      } else {
+      if (parameters$timeserie == 1) {
         print("Correct time difference based on the time when each instruments hit the water")
         plot(HS6$Time, HS6$depth)
         print("Click for the HS6 time stamp")
@@ -535,7 +539,26 @@ correct.merge.IOP.profile <- function(instrument, parameters){
         ixCTD = identify(CTD$Time, CTD$Depth)
         diffHS6 = difftime(CTD$Time[ixCTD], HS6$Time[ixHS6], units="secs")
         HS6$Time = HS6$Time + diffHS6
-      }
+      } else {
+       
+        diff.z = abs(HS6$depth[ix.maxZ.HS6] - CTD$Depth[ix.maxZ.CTD])
+        
+        if (diff.z < 1) {
+          diffHS6 = difftime(CTD$Time[ix.maxZ.CTD], HS6$Time[ix.maxZ.HS6], units="secs")
+          HS6$Time = HS6$Time + diffHS6 
+        } else {
+          print("Correct time difference based on the time when each instruments hit the water")
+          plot(HS6$Time, HS6$depth)
+          print("Click for the HS6 time stamp")
+          ixHS6 = identify(HS6$Time, HS6$depth)
+          plot(CTD$Time, CTD$Depth)
+          print("Click for the CTD time stamp")
+          ixCTD = identify(CTD$Time, CTD$Depth)
+          diffHS6 = difftime(CTD$Time[ixCTD], HS6$Time[ixHS6], units="secs")
+          HS6$Time = HS6$Time + diffHS6
+        }
+      } 
+      
 
 
       plot(HS6$Time, HS6$depth, pch=19,cex=0.5, main="Check depth matching",

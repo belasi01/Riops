@@ -12,5 +12,9 @@ read.cast.info <- function(cast.file) {
     if (!is.na(cast$Time0.LISST)) {
       cast$Time0.LISST = as.POSIXct(cast$Time0.LISST, tz="GMT")
     } else cast$Time0.LISST = NA
+    if (!("timeseries" %in% names(cast))) {
+      cast$timeseries = 0
+    }
+    
     return(cast)
 }

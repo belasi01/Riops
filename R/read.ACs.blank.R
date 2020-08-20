@@ -3,12 +3,22 @@
 
 read.ACs.blank <- function(fn){
   
-  #Reads and store header
+  # Find the number of waves
+  id = file(fn, "r")
+  line = readLines(con=id, n =1)
+  n=1
+  while (!str_detect(line, "output wavelengths")) {
+    line = readLines(con=id, n =1)
+    print(line)
+    n=n+1
+  }
+  nwaves <- as.numeric(unlist(strsplit(line, "\t"))[1]) 
+  close(id)
   
   
   # Reopen file to store the header
   id = file(fn, "r")
-  nrec = 99
+  nrec = 13+nwaves
   Header = rep("NA", nrec)
   for (i in 1:nrec) {
     Header[i] = readLines(con=id, n =1)  
@@ -19,14 +29,15 @@ read.ACs.blank <- function(fn){
   
   df = read.table(fn, skip=nrec+1)
   Timer = df$V1
-    nwl=78
-  c = as.matrix(df[,2:(nwl+1)])
-  a = as.matrix(df[,(nwl+2):(nwl+nwl+1)])
-  
-  XLambda = names[2:(nwl+1)]
+  ix.c.end = 1+nwaves
+  ix.a.end = ix.c.end+nwaves
+  c = as.matrix(df[,2:ix.c.end])
+  a = as.matrix(df[,(ix.c.end+1):ix.a.end])
+
+  XLambda = names[2:ix.c.end]
   c.wl = as.numeric(str_sub(XLambda, 2,6))
   
-  XLambda = names[(nwl+2):(nwl+nwl+1)]
+  XLambda = names[(ix.c.end+1):ix.a.end]
   a.wl = as.numeric(str_sub(XLambda, 2,6))
   
  

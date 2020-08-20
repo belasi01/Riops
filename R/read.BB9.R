@@ -3,7 +3,7 @@
 #' @param filen is a BB-9 file name
 #' @param raw if a logical parameter indicating whether the file is in raw count
 #' 
-#' @return If calibration already apply, it returns a list with Timer, Beta, BetaP, bbP, bb, wl
+#' @return If calibration already apply, it returns a list with Timer, Beta, BetaP, bbP, bb, waves
 #'
 #' @author Simon Belanger
 #' @export
@@ -16,20 +16,20 @@ read.BB9 <- function(filen, raw=FALSE){
     df = read.table(filen, header=F, skip=5)
     Timer = df[,4]
     raw <- as.matrix(df[,c(6,8,10,12,14,16,18,20,22)])
-    wl <- as.numeric(df[1,c(5,7,9,11,13,15,17,19,21)])
+    waves <- as.numeric(df[1,c(5,7,9,11,13,15,17,19,21)])
     
-    return(list(Timer=Timer, raw=raw, wl=wl, nrec = length(Timer)))
+    return(list(Timer=Timer, raw=raw, waves=waves, nrec = length(Timer)))
     
   } else {
     df = read.table(filen, header=T)
     
     Timer = df[,1]
-    Beta =as.matrix(df[,c(2,6,10,14,18,22,26,30,34)])
-    BetaP = as.matrix(df[,c(3,7,11,15,19,23,27,31,35)])
-    bbP = as.matrix(df[,c(4,8,12,16,20,24,28,32,36)])
-    bb = as.matrix(df[,c(5,9,13,17,21,25,29,33,37)])
+    Betau =as.matrix(df[,c(2,6,10,14,18,22,26,30,34)])
+    BetaPu = as.matrix(df[,c(3,7,11,15,19,23,27,31,35)])
+    bbPu = as.matrix(df[,c(4,8,12,16,20,24,28,32,36)])
+    bbu = as.matrix(df[,c(5,9,13,17,21,25,29,33,37)])
     x=names(df)[c(2,6,10,14,18,22,26,30,34)]
-    wl = as.numeric(str_sub(x,6,8))
+    waves = as.numeric(str_sub(x,6,8))
     
     
     # Check whether the timer is increasing and fix it if not
@@ -42,7 +42,7 @@ read.BB9 <- function(filen, raw=FALSE){
       ix = which(dt < 0)
     }
     
-    BB9 = list(Timer=Timer, Beta=Beta, BetaP=BetaP, bbP=bbP, bb=bb, wl=wl)
+    BB9 = list(Timer=Timer, Betau=Betau, BetaPu=BetaPu, bbPu=bbPu, bbu=bbu, waves=waves)
     
     return(BB9)
   }

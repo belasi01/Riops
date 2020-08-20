@@ -1,13 +1,13 @@
 Package: Riops
 Type: Package
 Title: IOPs data processing
-Version: 0.3-4
-Date: 2019-12-06
+Version: 0.4
+Date: 2020-06-04
 Author: Simon Belanger
 Maintainer: <simon_belanger@uqar.ca>
 Description: Routines to read and process IOPS from in-water optical packages
 License: NO
 LazyData: TRUE
 Depends:
-    stringr,brew,knitr,oce,xtable,ggplot2,reshape2,maps,grid
+    stringr,brew,knitr,oce,xtable,ggplot2,reshape2,maps,grid,tcltk
 RoxygenNote: 6.1.1

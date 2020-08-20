@@ -124,11 +124,11 @@ if (instrument$BB9 == 1) {
     bbP.fitted.down[bbP.fitted.down < minbb] = NA
     bbP.fitted.down[bbP.fitted.down > maxbb] = NA
     ix.down =   IOP$BB9$ixmin:IOP$BB9$ix.z.max
-    waves.bb9 = IOP$BB9$wl
+    waves.bb9 = IOP$BB9$waves
     n.wl = length(waves.bb9)
     bb.z.d = IOP$BB9$Depth[ix.down]
-    bb.d = IOP$BB9$bb.offset[ix.down,]
-    bbP.d = IOP$BB9$bbP.offset[ix.down,]
+    bb.d = IOP$BB9$bb.corrected[ix.down,]
+    bbP.d = IOP$BB9$bbP.corrected[ix.down,]
     bb.d[bb.d < minbb] = NA
     bb.d[bb.d > maxbb] = NA
     bbP.d[bbP.d < minbb] = NA
@@ -145,8 +145,8 @@ if (instrument$BB9 == 1) {
       bbP.fitted.up[bbP.fitted.up > maxbb] = NA
       ix.up = IOP$BB9$ix.z.max:IOP$BB9$ixmax
       bb.z.u = IOP$BB9$Depth[ix.up]
-      bb.u = IOP$BB9$bb.offset[ix.up,]
-      bbP.u = IOP$BB9$bbP.offset[ix.up,]
+      bb.u = IOP$BB9$bb.corrected[ix.up,]
+      bbP.u = IOP$BB9$bbP.corrected[ix.up,]
       bb.u[bb.u < minbb] = NA
     bbP.u[bbP.u > maxbb] = NA
     }
@@ -170,7 +170,7 @@ if (instrument$BB9 == 1) {
   p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
   p1 <- p1 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
   p1 <- p1 + ggtitle("Down cast")
-  #print(p1)
+  if (!IOP$BB9$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
 
   if (BB9.UPCAST) {
     Df.u = as.data.frame(cbind(-bb.z.u, bb.u[,9:1]))
@@ -186,7 +186,7 @@ if (instrument$BB9 == 1) {
     p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
     p2 <- p2 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
     p2 <- p2 + ggtitle("Up cast")
-
+    if (!IOP$BB9$sigma.correction) p2 <- p2 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   # plot bbP
@@ -202,7 +202,7 @@ if (instrument$BB9 == 1) {
   p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength))  + geom_point(size=1.)
   p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
   p3 <- p3 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
-
+   if (!IOP$BB9$sigma.correction) p3 <- p3 + labs(subtitle = 'NO ATTENUATION CORRECTION')
 
   if (BB9.UPCAST) {
     Df.u = as.data.frame(cbind(-bb.z.u, bbP.u[,9:1]))
@@ -217,6 +217,7 @@ if (instrument$BB9 == 1) {
     p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
     p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
     p4 <- p4 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+      if (!IOP$BB9$sigma.correction) p4 <- p4 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   pushViewport(viewport(layout = grid.layout(2, 7)))
@@ -240,7 +241,7 @@ if (instrument$BB9 == 1) {
   p1 <- p1 + scale_x_continuous(limits = c(400, 720))
   p1 <- p1 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
   p1 <- p1 + ggtitle("Down cast")
-
+  if (!IOP$BB9$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (BB9.UPCAST) {
       Df.u = as.data.frame(cbind(waves.bb9, t(bb.fitted.up[ixz,])))
       Dfm.u = melt(Df.u, id.vars = c("waves.bb9"))
@@ -249,6 +250,7 @@ if (instrument$BB9 == 1) {
       p2 <- p2 + scale_x_continuous(limits = c(400, 720)) + guides(colour=F)
       p2 <- p2 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
       p2 <- p2 + ggtitle("Up cast")
+      if (!IOP$BB9$sigma.correction) p2 <- p2 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   Df.d = as.data.frame(cbind(waves.bb9, t(bbP.fitted.down[ixz,])))
@@ -259,7 +261,7 @@ if (instrument$BB9 == 1) {
   p3 <- p3 + scale_x_continuous(limits = c(400, 720)) + guides(colour=F)
   p3 <- p3 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
   p3 <- p3 + ggtitle("Down cast")
-
+  if (!IOP$BB9$sigma.correction) p3 <- p3 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (BB9.UPCAST) {
     Df.u = as.data.frame(cbind(waves.bb9, t(bbP.fitted.up[ixz,])))
     Dfm.u = melt(Df.u, id.vars = c("waves.bb9"))
@@ -268,6 +270,7 @@ if (instrument$BB9 == 1) {
     p4 <- p4 + scale_x_continuous(limits = c(400, 720))  + guides(colour=F)
     p4 <- p4 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
     p4 <- p4 + ggtitle("Up cast")
+    if (!IOP$BB9$sigma.correction) p4 <- p4 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   if (BB9.UPCAST) {
@@ -345,7 +348,7 @@ if (instrument$HS6 == 1) {
   p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
   p1 <- p1 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
   p1 <- p1 + ggtitle("Down cast")
-  #print(p1)
+  if (!IOP$HS6$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (HS6.UPCAST) {
     Df.u = as.data.frame(cbind(-bb.z.u, bb.u[,6:1]))
     names(Df.u) <- c("Depth", as.character(waves.bb6[6:1]))
@@ -360,6 +363,7 @@ if (instrument$HS6 == 1) {
     p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
     p2 <- p2 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
     p2 <- p2 + ggtitle("Up cast")
+    if (!IOP$HS6$sigma.correction) p2 <- p2 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   # Plot bbP
@@ -375,7 +379,7 @@ if (instrument$HS6 == 1) {
   p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
   p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
   p3 <- p3 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
-
+  if (!IOP$HS6$sigma.correction) p3 <- p3 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (HS6.UPCAST) {
     Df.u = as.data.frame(cbind(-bb.z.u, bbP.u[,6:1]))
     names(Df.u) <- c("Depth", as.character(waves.bb6[6:1]))
@@ -389,6 +393,7 @@ if (instrument$HS6 == 1) {
     p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
     p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
     p4 <- p4 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+    if (!IOP$HS6$sigma.correction) p4 <- p4 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
 
@@ -413,7 +418,7 @@ if (instrument$HS6 == 1) {
   p1 <- p1 + scale_x_continuous(limits = c(390, 720))
   p1 <- p1 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
   p1 <- p1 + ggtitle("Down cast")
-
+  if (!IOP$HS6$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
    if (HS6.UPCAST) {
     Df.u = as.data.frame(cbind(waves.bb6, t(bb.fitted.up[ixz,])))
     Dfm.u = melt(Df.u, id.vars = c("waves.bb6"))
@@ -423,6 +428,7 @@ if (instrument$HS6 == 1) {
     p2 <- p2 + scale_x_continuous(limits = c(390, 720)) + guides(colour=F)
     p2 <- p2 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
     p2 <- p2 + ggtitle("Up cast")
+    if (!IOP$HS6$sigma.correction) p2 <- p2 + labs(subtitle = 'NO ATTENUATION CORRECTION')
    }
 
   Df.d = as.data.frame(cbind(waves.bb6, t(bbP.fitted.down[ixz,])))
@@ -433,7 +439,7 @@ if (instrument$HS6 == 1) {
   p3 <- p3 + scale_x_continuous(limits = c(390, 720)) + guides(colour=F)
   p3 <- p3 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
   p3 <- p3 + ggtitle("Down cast")
-
+  if (!IOP$HS6$sigma.correction) p3 <- p3 + labs(subtitle = 'NO ATTENUATION CORRECTION')
    if (HS6.UPCAST) {
     Df.u = as.data.frame(cbind(waves.bb6, t(bbP.fitted.up[ixz,])))
     Dfm.u = melt(Df.u, id.vars = c("waves.bb6"))
@@ -443,6 +449,7 @@ if (instrument$HS6 == 1) {
     p4 <- p4 + scale_x_continuous(limits = c(390, 720))  + guides(colour=F)
     p4 <- p4 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
     p4 <- p4 + ggtitle("Up cast")
+    if (!IOP$HS6$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
    }
 
   if (HS6.UPCAST) {
@@ -519,7 +526,7 @@ if (instrument$BB3 == 1) {
   p1 <- p1 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
   p1 <- p1 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
   p1 <- p1 + ggtitle("Down cast")
-
+  if (!IOP$BB3$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (BB3.UPCAST) {
     Df.u = as.data.frame(cbind(-bb.z.u, bb.u[,3:1]))
     names(Df.u) <- c("Depth", as.character(waves.bb3[3:1]))
@@ -534,6 +541,7 @@ if (instrument$BB3 == 1) {
     p2 <- p2 + geom_point(data=Dfm.fitted.u, size=1.7)
     p2 <- p2 + labs(x=expression(paste("b"["b"], " (m"^"-1",")")) , y="Depth (m)")
     p2 <- p2 + ggtitle("Up cast")
+    if (!IOP$BB3$sigma.correction) p2 <- p2 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   Df.d = as.data.frame(cbind(-bb.z.d, bbP.d[,3:1]))
@@ -549,7 +557,7 @@ if (instrument$BB3 == 1) {
   p3 <- ggplot(data=Dfm.d, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
   p3 <- p3 + geom_point(data=Dfm.fitted.d, size=1.7)   + guides(colour=F)
   p3 <- p3 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
-
+  if (!IOP$BB3$sigma.correction) p3 <- p3 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (BB3.UPCAST) {
     Df.u = as.data.frame(cbind(-bb.z.u, bbP.u[,3:1]))
     names(Df.u) <- c("Depth", as.character(waves.bb3[3:1]))
@@ -563,6 +571,7 @@ if (instrument$BB3 == 1) {
     p4 <- ggplot(data=Dfm.u, aes(x=value, y=Depth, colour=Wavelength,group=Wavelength)) + geom_point(size=1.)
     p4 <- p4 + geom_point(data=Dfm.fitted.u, size=1.7)   + guides(colour=F)
     p4 <- p4 + labs(x=expression(paste("b"["bp"], " (m"^"-1",")")) , y="Depth (m)")
+    if (!IOP$BB3$sigma.correction) p4 <- p4 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   pushViewport(viewport(layout = grid.layout(2, 7)))
@@ -587,7 +596,7 @@ if (instrument$BB3 == 1) {
   p1 <- p1 + scale_x_continuous(limits = c(700, 900))
   p1 <- p1 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
   p1 <- p1 + ggtitle("Down cast")
-
+  if (!IOP$BB3$sigma.correction) p1 <- p1 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (BB3.UPCAST) {
     Df.u = as.data.frame(cbind(waves.bb3, t(bb.fitted.up[ixz,])))
     Dfm.u = melt(Df.u, id.vars = c("waves.bb3"))
@@ -597,6 +606,7 @@ if (instrument$BB3 == 1) {
     p2 <- p2 + scale_x_continuous(limits = c(700, 900)) + guides(colour=F)
     p2 <- p2 + labs(x="wavelength", y=expression(paste("b"["b"]," (m"^"-1",")")))
     p2 <- p2 + ggtitle("Up cast")
+    if (!IOP$BB3$sigma.correction) p2 <- p2 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   Df.d = as.data.frame(cbind(waves.bb3, t(bbP.fitted.down[ixz,])))
@@ -607,7 +617,7 @@ if (instrument$BB3 == 1) {
   p3 <- p3 + scale_x_continuous(limits = c(700, 900)) + guides(colour=F)
   p3 <- p3 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
   p3 <- p3 + ggtitle("Down cast")
-
+  if (!IOP$BB3$sigma.correction) p3 <- p3 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   if (BB3.UPCAST) {
     Df.u = as.data.frame(cbind(waves.bb3, t(bbP.fitted.up[ixz,])))
     Dfm.u = melt(Df.u, id.vars = c("waves.bb3"))
@@ -617,6 +627,7 @@ if (instrument$BB3 == 1) {
     p4 <- p4 + scale_x_continuous(limits = c(700, 900))  + guides(colour=F)
     p4 <- p4 + labs(x="wavelength", y=expression(paste("b"["bp"]," (m"^"-1",")")))
     p4 <- p4 + ggtitle("Up cast")
+    if (!IOP$BB3$sigma.correction) p4 <- p4 + labs(subtitle = 'NO ATTENUATION CORRECTION')
   }
 
   if (BB3.UPCAST) {
@@ -649,7 +660,7 @@ if (instrument$ACS == 1) {
   n.wl = length(waves.a)
   # Wavelenght setected to plot profile corresponding to BB9
   ix.wl = rep(NA,9)
-  if (is.null(IOP$BB9$wl)) wl.selected = c(412,443,488,510,555,590,620,676,700) else wl.selected = IOP$BB9$wl
+  if (is.null(IOP$BB9$waves)) wl.selected = c(412,443,488,510,555,590,620,676,700) else wl.selected = IOP$BB9$waves
   for (j in 1:9){
       ix.wl[j] = which.min(abs(IOP$ACS$a.wl-wl.selected[j]))
   }

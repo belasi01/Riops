@@ -7,8 +7,8 @@
 #   HS6.CALYEAR     is the year of the HS6 calibration
 #   blank.ASPH      is a string for the path of the blank for ASPH
 #   blank.ACS       is a string for the path of the blank for ACS
-#   blank.BB9       is a string for the path of the blank for BB9
-#   blank.BB3       is a string for the path of the blank for BB3
+#   blank.BB9       is a string for the path of the blank for BB9 (if a *.dev is provided, than the BB9 raw data will be converted in calibrated data using the calibration)
+#   blank.BB3       is a string for the path of the blank for BB3 (if a *.dev is provided, than the BB3 raw data will be converted in calibrated data using the calibration)
 #
 #  NOTE: any field can be ommited with out problem
 ##################################################

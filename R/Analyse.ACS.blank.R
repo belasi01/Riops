@@ -54,8 +54,15 @@ analyse.ACs.blank <- function (Twater = 19,
     Tcor_factor = PsiTm * delta_Tm
 
     ACS$c.Tcor = ACS$c - Tcor_factor
+    
+    med.a = median(ACS$a.Tcor[,1], na.rm = T)
+    med.c = median(ACS$c.Tcor[,1], na.rm = T)
+    sd.a = sd(ACS$a.Tcor[,1], na.rm = T)
+    sd.c = sd(ACS$c.Tcor[,1], na.rm = T)
+    myrange = c(min(med.a-sd.a, med.c-sd.c), max(med.a+sd.a, med.c+sd.c))
+    
 
-    plot(ACS$Timer, ACS$a.Tcor[,1], type = "l", ylim=c(-0.2, 0.2))
+    plot(ACS$Timer, ACS$a.Tcor[,1], type = "l", ylim=myrange)
     lines(ACS$Timer, ACS$a.Tcor[,10], col=2)
     lines(ACS$Timer, ACS$a.Tcor[,20], col=3)
     lines(ACS$Timer, ACS$a.Tcor[,30], col=4)
@@ -63,7 +70,7 @@ analyse.ACs.blank <- function (Twater = 19,
     lines(ACS$Timer, ACS$a.Tcor[,50], col=6)
     lines(ACS$Timer, ACS$a.Tcor[,60], col=7)
     lines(ACS$Timer, ACS$a.Tcor[,70], col=8)
-
+    lines(ACS$Timer, ACS$c.Tcor[,1], col=1, lty=2)
     lines(ACS$Timer, ACS$c.Tcor[,10], col=2, lty=2)
     lines(ACS$Timer, ACS$c.Tcor[,20], col=3, lty=2)
     lines(ACS$Timer, ACS$c.Tcor[,30], col=4, lty=2)
@@ -90,7 +97,8 @@ analyse.ACs.blank <- function (Twater = 19,
 
   } else {
 
-    print ("Select the file for beam-c calibration")
+    msgBox <- tkmessageBox(title = "WARNING!",
+                           message = "Select a beam-c file", icon = "info", type ="ok")
     filename = file.choose()
     CS = read.ACs.blank(filename)
 
@@ -101,8 +109,13 @@ analyse.ACs.blank <- function (Twater = 19,
     Tcor_factor = PsiTm * delta_Tm
 
     CS$c.Tcor = CS$c - Tcor_factor
+    
+    med.c = median(CS$c.Tcor[,1], na.rm = T)
+    sd.c = sd(CS$c.Tcor[,1], na.rm = T)
+    myrange = c(med.c-sd.c, med.c+sd.c)
+    
 
-    plot(CS$Timer, CS$c.Tcor[,1], type = "l", ylim=c(-0.2,0.2))
+    plot(CS$Timer, CS$c.Tcor[,1], type = "l", ylim=myrange)
     lines(CS$Timer, CS$c.Tcor[,10], col=2, lty=2)
     lines(CS$Timer, CS$c.Tcor[,20], col=3, lty=2)
     lines(CS$Timer, CS$c.Tcor[,30], col=4, lty=2)
@@ -121,7 +134,8 @@ analyse.ACs.blank <- function (Twater = 19,
     c.blank.sd   = apply(CS$c.Tcor[ixmin:ixmax,],2,sd, na.rm=T)
 
 
-    print ("Select the file for beam-a calibration")
+    msgBox <- tkmessageBox(title = "WARNING!",
+                           message = "Select a beam-a file", icon = "info", type ="ok")
     filename = file.choose()
     AS = read.ACs.blank(filename)
 
@@ -133,7 +147,11 @@ analyse.ACs.blank <- function (Twater = 19,
 
     AS$a.Tcor = AS$a - Tcor_factor
 
-    plot(AS$Timer, AS$a.Tcor[,1], type = "l", ylim=c(-0.2,0.2))
+    med.a = median(AS$a.Tcor[,1], na.rm = T)
+    sd.a = sd(AS$a.Tcor[,1], na.rm = T)
+    myrange = c(med.a-sd.a, med.a+sd.a)
+    
+    plot(AS$Timer, AS$a.Tcor[,1], type = "l", ylim=myrange)
     lines(AS$Timer, AS$a.Tcor[,10], col=2, lty=2)
     lines(AS$Timer, AS$a.Tcor[,20], col=3, lty=2)
     lines(AS$Timer, AS$a.Tcor[,30], col=4, lty=2)
@@ -173,7 +191,7 @@ analyse.ACs.blank <- function (Twater = 19,
   names(df) = c("wl","c")
   mod = loess(c ~ wl, data=df, span=0.1)
   c.blank.mean.smooth = predict(mod, c.wl)
-  lines(CS$c.wl, c.blank.mean.smooth, col=1)
+  lines(c.wl, c.blank.mean.smooth, col=1)
 
   ACS.blank = list(a.mean=a.blank.mean, a.smooth=a.blank.mean.smooth, a.sd=a.blank.sd,
                    c.mean=c.blank.mean, c.smooth=c.blank.mean.smooth, c.sd=c.blank.sd,

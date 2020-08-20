@@ -11,7 +11,7 @@
 
 
 read.ACs <- function(filen){
-
+  
   #Reads and store header
   id = file(filen, "r")
   nrec = 10
@@ -40,26 +40,40 @@ read.ACs <- function(filen){
   line = unlist(strsplit(readLines(con=id, n =1), "\t") )
   nrec = nrec + 2
   close(id)
-
+  
   # Read data
-  df = read.table(filen, header=T, skip=nrec)
-
-  Timer = df$Time.ms.
-  c = as.matrix(df[,2:(nwaves+1)])
-  a = as.matrix(df[,(nwaves+2):(2*nwaves+1)])
-  iTemp = df$iTemp.C.
-  Cond = df$Conduct
-  Depth = df$Depth
-  XTemp = df$XTemp
-  Sal = df$Salinity
-
-  XLambda = names(df)[2:(nwaves+1)]
+  # Reopen file to store the header
+  id = file(filen, "r")
+  nrec = 13+nwaves
+  Header = rep("NA", nrec)
+  for (i in 1:nrec) {
+    Header[i] = readLines(con=id, n =1)  
+  }
+  names = unlist(strsplit(readLines(con=id, n =1), "\t")  )
+  close(id)
+  
+  df = read.table(filen, skip=nrec+1)
+  Timer = df$V1
+  
+  #Timer = df$Time.ms.
+  ix.c.end = 1+nwaves
+  ix.a.end = ix.c.end+nwaves
+  c = as.matrix(df[,2:ix.c.end])
+  a = as.matrix(df[,(ix.c.end+1):ix.a.end])
+  
+  if (!is.null(df$iTemp.C.)) iTemp = df$iTemp.C. else iTemp = NA
+  if (!is.null(df$Conduct)) Cond = df$Conduct else Cond = NA
+  if (!is.null(df$Depth)) Depth = df$Depth  else Depth = NA
+  if (!is.null(df$Temp)) XTemp = df$XTemp  else  XTemp = NA
+  if (!is.null(df$Sal)) Sal = df$Salinity else   Sal = NA
+  
+  XLambda = names[2:ix.c.end]
   c.wl = as.numeric(str_sub(XLambda, 2,6))
-
-  XLambda = names(df)[(nwaves+2):(2*nwaves+1)]
+  
+  XLambda = names[(ix.c.end+1):ix.a.end]
   a.wl = as.numeric(str_sub(XLambda, 2,6))
-
-
+  
+  
   # Check whether the timer is increasing and fix it if not
   dt = rep(NA, length(Timer)-1)
   for (i in 1:(length(Timer)-1)) dt[i] = (Timer[i+1] - Timer[i])
@@ -69,9 +83,9 @@ read.ACs <- function(filen){
     for (i in 1:(length(Timer)-1)) dt[i] = (Timer[i+1] - Timer[i])
     ix = which(dt < 0)
   }
-
+  
   ACs = list(Timer=Timer, c.wl=c.wl, a.wl=a.wl, c=c, a=a,
              iTemp=iTemp, Sal=Sal, Depth=Depth, XTemp= XTemp, Cond=Cond)
-
+  
   return(ACs)
 }

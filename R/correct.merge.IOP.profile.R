@@ -162,6 +162,20 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     }
     HS6.CALYEAR = NA
   }
+  
+  if (!is.null(parameters$blank.BB9) & !is.na(parameters$blank.BB9)) {
+    index_ext = length(unlist(strsplit(parameters$blank.BB9, "[.]")))	
+    ext = unlist(strsplit(parameters$blank.BB9, "[.]"))[index_ext]
+    if (ext == "dev") BB9.DEVICE.FILE = TRUE else   BB9.DEVICE.FILE = FALSE 
+  }
+  
+  if (!is.null(parameters$blank.BB3) & !is.na(parameters$blank.BB3)) {
+    index_ext = length(unlist(strsplit(parameters$blank.BB3, "[.]")))	
+    ext = unlist(strsplit(parameters$blank.BB3, "[.]"))[index_ext]
+    if (ext == "dev") BB3.DEVICE.FILE = TRUE else   BB3.DEVICE.FILE = FALSE 
+  }
+  
+
 
   setwd(path)
 
@@ -174,7 +188,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   if (instrument$CTD.UQAR == 1) {
     filen = paste("CTD",cast, ".TXT", sep="")
     # If the standard CTD file do not exist,
-    #  if a cnv file exits instead
+    #  check for a cnv file instead
     if (file.exists(filen)) {
       CTD = read.CTD(filen)
     } else {
@@ -192,11 +206,21 @@ correct.merge.IOP.profile <- function(instrument, parameters){
           print("STOP PROCESSING")
           return(0)
         }
-        CTD$Time =  Time0.CTD  + CTD.OCE[["time"]]
+        if (is.numeric(CTD.OCE[["time"]])) { # This condition was added because 
+          #the "time" in the cnv files are now output 
+          #in POSIXct by the oce package since 2018.  
+          CTD$Time =  Time0.CTD  + CTD.OCE[["time"]]
+        } else CTD$Time =  CTD.OCE[["time"]] 
+                                              
         CTD$Temp =  CTD.OCE[["temperature"]]
         CTD$Sal  =  CTD.OCE[["salinity"]]
-        CTD$Depth=  swDepth(CTD.OCE[["pressure"]])
-        CTD$Density=CTD.OCE[["sigmaTheta"]]
+
+        if (!is.null(CTD.OCE[["par"]]))          CTD$PAR<- CTD.OCE[["par"]]
+        if (!is.null(CTD.OCE[["turbidity"]]))    CTD$turbidity <- CTD.OCE[["turbidity"]]
+        if (!is.null(CTD.OCE[["fluorescence"]])) CTD$fluorescence <- CTD.OCE[["fluorescence"]]
+        if (!is.null(CTD.OCE[["depth"]]))        CTD$Depth=  swDepth(CTD.OCE[["depth"]]) else CTD$Depth=  swDepth(CTD.OCE[["pressure"]])
+        if (!is.null(CTD.OCE[["sigmaTheta"]]))   CTD$sigmaTheta=CTD.OCE[["sigmaTheta"]]
+        
       }
     }
 
@@ -270,18 +294,54 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   if (instrument$BB9 == 1) {
 
-    ix.inst = which(DH4.ports$Sensor == "BB9")
-    pattern = paste("_", DH4.ports$Port[ix.inst],"_", sep="")
-    filen = list.files( pattern = pattern)
-    if(!file.exists(filen)) {
-      print(paste("BB9 file not found in", getwd()))
-      print("Check whether or not the port number is good")
-      print("Use capital letters for sensor name")
-      print(DH4.ports)
-      stop()
-    } else BB9 = read.BB9(filen)
-    # extract the port number
-    BB9.port = as.numeric(DH4.ports$Port[ix.inst])
+    # BB9 attached to a DH4... 
+    if (instrument$CTD.DH4 == 1) {
+      ix.inst = which(DH4.ports$Sensor == "BB9")
+      pattern = paste("_", DH4.ports$Port[ix.inst],"_", sep="")
+      filen = list.files( pattern = pattern)
+      if(!file.exists(filen)) {
+        print(paste("BB9 file not found in", getwd()))
+        print("Check whether or not the port number is good")
+        print("Use capital letters for sensor name")
+        print(DH4.ports)
+        stop()
+      } else BB9 = read.BB9(filen)
+      # extract the port number
+      BB9.port = as.numeric(DH4.ports$Port[ix.inst])
+    } else {
+      # BB9 in stand alone mode.... data could be provided in calibrated format, 
+      # or in raw format which the prefered method.
+      pattern = "BB9"
+      filen = list.files( pattern = pattern)
+      if(!file.exists(filen)) {
+        print(paste("BB9 file not found in", getwd()))
+        print("BB9 should appear in the file name...")
+        stop()
+      } else {
+        # Check the extension. If raw, then apply calibration from the device file.
+        index_ext = length(unlist(strsplit(filen, "[.]")))	# for station names with periods, ex. G604.5
+        ext = unlist(strsplit(filen, "[.]"))[index_ext]
+        if (ext == "raw") {
+          print("BB9 deployed in Stand Alone mode and raw format")
+          BB9.raw <- read.BB9(filen, raw = TRUE)
+          
+          if (BB9.DEVICE.FILE) {
+            BB9 <- apply.ECO.cal(BB9.raw, dev.file=parameters$blank.BB9, dark.file=NA,ECO.type="BB9")
+          } else {
+            print("Raw BB9 detected but no device file provided!!! ")
+            print("Please put the path and file name of the device file")
+            print("in the cal.info.dat for the >blank.BB9< parameter")
+            BB9.DEVICE.FILE == FALSE
+          }
+         
+        } else {
+          print("BB9 deployed in Stand Alone mode and eng format")
+          BB9 <- read.BB9(filen)
+        }
+        
+      }
+    }
+    
 
 
   } else {
@@ -290,18 +350,35 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
 
   if (instrument$ACS == 1) {
-    ix.inst = which(DH4.ports$Sensor == "ACS")
-    pattern = paste("_", DH4.ports$Port[ix.inst],"_", sep="")
-    filen = list.files( pattern = pattern)
-    if(!file.exists(filen)) {
-      print(paste("ACS file not found in", getwd()))
-      print("Check whether or not the port number is good")
-      print("Use capital letters for sensor name")
-      print(DH4.ports)
-      stop()
-    } else ACS = read.ACs(filen)
-    # extract the port number from name
-    ACS.port = as.numeric(DH4.ports$Port[ix.inst])
+    
+    # ACS attached to a DH4... 
+    if (instrument$CTD.DH4 == 1) {
+      ix.inst = which(DH4.ports$Sensor == "ACS")
+      pattern = paste("_", DH4.ports$Port[ix.inst],"_", sep="")
+      filen = list.files( pattern = pattern)
+      if(!file.exists(filen)) {
+        print(paste("ACS file not found in", getwd()))
+        print("Check whether or not the port number is good")
+        print("Use capital letters for sensor name")
+        print(DH4.ports)
+        stop()
+      } else ACS = read.ACs(filen)
+      # extract the port number from name
+      ACS.port = as.numeric(DH4.ports$Port[ix.inst])
+    } else {
+      # ACS in stand alone mode.... data could be provided in calibrated format, 
+      # or in raw format which the prefered method.
+      pattern = "ACS"
+      filen = list.files( pattern = pattern)
+      if(!file.exists(filen)) {
+        print(paste("ACS file not found in", getwd()))
+        print("ACS should appear in the file name...")
+        stop()
+      } else {
+        ACS <- read.ACs(filen)
+      }
+    }
+    
 
     } else {
       print("No ACS to process")
@@ -384,7 +461,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
 
   #######  Adjusting time stamp to each sensor; two cases are considered####
-  ########  for IML optical package and UQAR optical package
+  ########  for 1) IML optical package and  2) UQAR optical package, or SBE CTD
 
   if (instrument$CTD.DH4 == 1) {
 
@@ -422,6 +499,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     }
     CTD$Time = Time0.CTD + CTD$Timer/1000
 
+    # NOTE the Timer, when using the DH4, are in milliseconds. This is why we divide by 1000
     if (instrument$ACS == 1) ACS$Time = Time0.CTD + ACS$Timer/1000 - TO$offset[ACS.port]/1000
     if (instrument$BB9 == 1) BB9$Time = Time0.CTD + BB9$Timer/1000 - TO$offset[BB9.port]/1000
     if (instrument$BB3 == 1) BB3$Time = Time0.CTD + BB3$Timer/1000 - TO$offset[BB3.port]/1000
@@ -431,7 +509,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
     dt = difftime(max(CTD$Time), min(CTD$Time), units="secs")
     # use a 10 seconds time window to define the span parameter for smoothing data
-    span.CTD =    10 / as.numeric(dt)
+    span.CTD =    max(10 / as.numeric(dt), 0.1)
 
     # Find time0 from ASPH to apply time stamp to LISST
     if (instrument$LISST == 1) {
@@ -595,10 +673,35 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       diffFLECO = difftime(CTD$Time[ixCTD], FLECO$Time[ixFLECO], units="secs")
       FLECO$Time = FLECO$Time + diffFLECO
     }
+    
+    # New cases added when CTD and BB9 or ACS are deployed in Stand alone mode
+    if (instrument$BB9 == 1 & instrument$CTD.DH4 == 0) {
+      BB9$Time <- Time0.CTD + BB9$Timer # Here the timer is in second
+      plot(BB9$Time, BB9$Betau[,2])
+      print("Click for the BB9 time stamp when exiting the water")
+      ixBB9 = identify(BB9$Time, BB9$Betau[,2])
+      plot(CTD$Time, CTD$Sal)
+      print("Click for the CTD time stamp when exiting the water")
+      ixCTD = identify(CTD$Time, CTD$Sal)
+      diffBB9 = difftime(CTD$Time[ixCTD], BB9$Time[ixBB9], units="secs")
+      BB9$Time = BB9$Time + diffBB9
+    }
+    
+    if (instrument$ACS == 1 & instrument$CTD.DH4 == 0) {
+      ACS$Time <- Time0.CTD + ACS$Timer/1000 # Here the timer is in millsecond
+      plot(ACS$Time, ACS$c[,10])
+      print("Click for the ACS time stamp when exiting the water")
+      ixACS = identify(ACS$Time, ACS$c[,10])
+      plot(CTD$Time, CTD$Sal)
+      print("Click for the CTD time stamp when exiting the water")
+      ixCTD = identify(CTD$Time, CTD$Sal)
+      diffACS = difftime(CTD$Time[ixCTD], ACS$Time[ixACS], units="secs")
+      ACS$Time = ACS$Time + diffACS
+    }
 
     dt = difftime(max(CTD$Time), min(CTD$Time), units="secs")
     # use a 10 seconds time window to define the span parameter
-    span.CTD =    10 / as.numeric(dt)
+    span.CTD =    max(10 / as.numeric(dt), 0.1)
 
   }
 
@@ -665,7 +768,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       names(df) = c("t","z")
       dt = difftime(max(HS6$Time), min(HS6$Time), units="secs")
       # use a 10 seconds time window to define the span parameter
-      span.HS6 =    10 / as.numeric(dt)
+      span.HS6 =    max(10 / as.numeric(dt), 0.1)
       mod = loess(z ~ t, data=df, span=span.HS6)
       FLECO$Depth = predict(mod, FLECO$Time)
     }
@@ -674,7 +777,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       names(df) = c("t","z")
       dt = difftime(max(ASPH$time), min(ASPH$time), units="secs")
       # use a 10 seconds time window to define the span parameter
-      span.ASPH =    10 / as.numeric(dt)
+      span.ASPH =    max(10 / as.numeric(dt), 0.1)
       mod = loess(z ~ t, data=df, span=span.ASPH)
       FLECO$Depth = predict(mod, FLECO$Time)
     }
@@ -875,7 +978,8 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     }
 
 
-    ############################## Apply scattering correction to ACS
+    #######  Apply scattering correction to ACS ####
+    
     print("Apply scattering correction to ACS absorption")
     ix.NIR = which(ACS$c.wl > 720)
     a.nir = apply(ACS$a.TScor.offset[,ix.NIR],1,mean, na.rm=T)
@@ -903,45 +1007,46 @@ correct.merge.IOP.profile <- function(instrument, parameters){
         # correct bb9 data
         # Compute Pure Water beta
         S.fac = (1+(0.3*BB9$S/37))*1e-4 * (1+ cos(117/180*pi)*cos(117/180*pi)*((1-0.09)/(1+0.09)))
-        wl.fac = 1.38*(BB9$wl/500)^-4.32
-        S.fac.m = matrix(S.fac, nrow=length(BB9$Depth), ncol=length(BB9$wl), byrow=F)
-        wl.fac.m = matrix(wl.fac, nrow=length(BB9$Depth), ncol=length(BB9$wl),byrow=T)
+        wl.fac = 1.38*(BB9$waves/500)^-4.32
+        S.fac.m = matrix(S.fac, nrow=length(BB9$Depth), ncol=length(BB9$waves), byrow=F)
+        wl.fac.m = matrix(wl.fac, nrow=length(BB9$Depth), ncol=length(BB9$waves),byrow=T)
 
         BetaW = S.fac.m * wl.fac.m
-        bbW = (0.0029308*(BB9$wl/500)^-4.24)/2
-        bbW.m = matrix(bbW, nrow=length(BB9$Depth), ncol=length(BB9$wl), byrow=T)
+        bbW = (0.0029308*(BB9$waves/500)^-4.24)/2
+        bbW.m = matrix(bbW, nrow=length(BB9$Depth), ncol=length(BB9$waves), byrow=T)
 
         Beta2bb <- 2*pi*1.1
 
         ix.BB9.wl = rep(NA,9)
         for (j in 1:9){
-          ix.BB9.wl[j] = which.min(abs(ACS$a.wl-BB9$wl[j]))
+          ix.BB9.wl[j] = which.min(abs(ACS$a.wl-BB9$waves[j]))
         }
         dt = difftime(max(BB9$Time), min(BB9$Time), units="secs")
         # use a 10 seconds time window to define the span parameter
-        span.BB9 =    10 / as.numeric(dt)
-        tmp = fit.with.loess(ACS$a.wl[ix.BB9.wl], ACS$Timer,
-                             ACS$a.corrected[,ix.BB9.wl], span.BB9, BB9$Timer)
+        span.BB9 =    max(10 / as.numeric(dt), 0.1)
+        tmp = fit.with.loess(ACS$a.wl[ix.BB9.wl], as.numeric(ACS$Time),
+                             ACS$a.corrected[,ix.BB9.wl], span.BB9, as.numeric(BB9$Time))
         a.bb9 = tmp$aop.fitted
         # New pathlenght estimated by Doxaran et al 2016
-        BB9$Beta.corrected   <- BB9$Beta * exp(0.01635*a.bb9)
+        BB9$Beta.corrected   <- BB9$Betau * exp(0.01635*a.bb9)
         BB9$BetaP.corrected  <- BB9$Beta.corrected - BetaW
         BB9$bbP.corrected    <- Beta2bb * BB9$BetaP.corrected
 
         # Extrapolate bbp to match ACS data matrix.
         # Only use the extremity to avoid extrapolation artefact
         # A nls fit could be implemented eventually
+        good.ix <- which(!is.na(BB9$bbP.corrected[,1]))
 
-        bbP.acs = t(apply(BB9$bbP.corrected[,c(1,9)],1,
+        bbP.acs = t(apply(BB9$bbP.corrected[good.ix,c(2,9)],1,
                           function(y){
-                            res = spline(BB9$wl[c(1,9)],y,xout=ACS$c.wl, method="natural")$y
+                            res = spline(BB9$waves[c(2,9)],y,xout=ACS$c.wl, method="natural")$y
                             }))
 
         # now interpolate for depth
         dt = difftime(max(ACS$Time), min(ACS$Time), units="secs")
-        span.ACS =    10 / as.numeric(dt)
-        tmp = fit.with.loess(ACS$c.wl, BB9$Timer,
-                             bbP.acs, span.ACS, ACS$Timer)
+        span.ACS =    max(10 / as.numeric(dt), 0.1)
+        tmp = fit.with.loess(ACS$c.wl, as.numeric(BB9$Time[good.ix]),
+                             bbP.acs, span.ACS, as.numeric(ACS$Time))
         bbP.acs = tmp$aop.fitted # overwrite
 
         bbp.tild.0 = bbP.acs / (1.5*b_star)  # from Mckee et al. (Fig. 4)
@@ -1031,25 +1136,40 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   if (instrument$BB9 ==1) {
 
     if (file.exists(parameters$blank.BB9)) {
-      print("Apply Blank correction to BB9")
-      load(file=parameters$blank.BB9)
-      bb.blank.m = matrix(blank.BB9, nrow=length(BB9$Timer), ncol=length(BB9$wl), byrow=T)
-      beta.blank.m = matrix(blank.BB9/6.9115, nrow=length(BB9$Timer), ncol=length(BB9$wl), byrow=T)
+      if (BB9.DEVICE.FILE) {
+        print("@@@@@@@@@@@@@@@@@@@@")
+        print("Device file provided instead of a blank.")
+        print("In that case, to account for field BB9 blank (or dark measurement)")
+        print("Please change the offset in the device file...")
+        print("@@@@@@@@@@@@@@@@@@@@")
+        BB9$bbP.offset   = BB9$bbPu
+        BB9$bb.offset   = BB9$bbu
+      
+        BB9$BetaP.offset   = BB9$BetaPu
+        BB9$Beta.offset   = BB9$Betau
+        BB9$blank = NA
+      } else {
+        print("Apply Blank correction to BB9")
+        load(file=parameters$blank.BB9)
+        bb.blank.m = matrix(blank.BB9, nrow=length(BB9$Timer), ncol=length(BB9$waves), byrow=T)
+        beta.blank.m = matrix(blank.BB9/6.9115, nrow=length(BB9$Timer), ncol=length(BB9$waves), byrow=T)
+        
+        BB9$bbP.offset   = BB9$bbPu - bb.blank.m
+        BB9$bb.offset   = BB9$bbu - bb.blank.m
+        
+        BB9$BetaP.offset   = BB9$BetaPu - beta.blank.m
+        BB9$Beta.offset   = BB9$Betau - beta.blank.m
+        BB9$blank = blank.BB9
+      }
 
-      BB9$bbP.offset   = BB9$bbP - bb.blank.m
-      BB9$bb.offset   = BB9$bb - bb.blank.m
-
-      BB9$BetaP.offset   = BB9$BetaP - beta.blank.m
-      BB9$Beta.offset   = BB9$Beta - beta.blank.m
-      BB9$blank = blank.BB9
 
     } else {
       print("No blank correction for BB9")
-      BB9$bbP.offset   = BB9$bbP
-      BB9$bb.offset   = BB9$bb
+      BB9$bbP.offset   = BB9$bbPu
+      BB9$bb.offset   = BB9$bbu
 
-      BB9$BetaP.offset   = BB9$BetaP
-      BB9$Beta.offset   = BB9$Beta
+      BB9$BetaP.offset   = BB9$BetaPu
+      BB9$Beta.offset   = BB9$Betau
       BB9$blank = NA
     }
 
@@ -1059,24 +1179,24 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
     # Compute Pure Water beta
     S.fac = (1+(0.3*BB9$S/37))*1e-4 * (1+ cos(117/180*pi)*cos(117/180*pi)*((1-0.09)/(1+0.09)))
-    wl.fac = 1.38*(BB9$wl/500)^-4.32
-    S.fac.m = matrix(S.fac, nrow=length(BB9$Depth), ncol=length(BB9$wl), byrow=F)
-    wl.fac.m = matrix(wl.fac, nrow=length(BB9$Depth), ncol=length(BB9$wl),byrow=T)
+    wl.fac = 1.38*(BB9$waves/500)^-4.32
+    S.fac.m = matrix(S.fac, nrow=length(BB9$Depth), ncol=length(BB9$waves), byrow=F)
+    wl.fac.m = matrix(wl.fac, nrow=length(BB9$Depth), ncol=length(BB9$waves),byrow=T)
 
     BetaW = S.fac.m * wl.fac.m
-    bbW = (0.0029308*(BB9$wl/500)^-4.24)/2
-    bbW.m = matrix(bbW, nrow=length(BB9$Depth), ncol=length(BB9$wl), byrow=T)
+    bbW = (0.0029308*(BB9$waves/500)^-4.24)/2
+    bbW.m = matrix(bbW, nrow=length(BB9$Depth), ncol=length(BB9$waves), byrow=T)
 
     Beta2bb <- 2*pi*1.1
 
     if (instrument$ASPH == 1) {
       ix.BB9.wl = rep(NA,9)
       for (j in 1:9){
-        ix.BB9.wl[j] = which.min(abs(ASPH$wl - BB9$wl[j]))
+        ix.BB9.wl[j] = which.min(abs(ASPH$wl - BB9$waves[j]))
       }
       dt = difftime(max(BB9$Time), min(BB9$Time), units="secs")
       # use a 10 seconds time window to define the span parameter
-      span.BB9 =    10 / as.numeric(dt)
+      span.BB9 =    max(10 / as.numeric(dt), 0.1)
       tmp = fit.with.loess(ASPH$wl[ix.BB9.wl], as.numeric(ASPH$time),
                            ASPH$a.corrected[,ix.BB9.wl], span.BB9, as.numeric(BB9$Time))
       a.bb9 = tmp$aop.fitted
@@ -1092,17 +1212,18 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     if (instrument$ASPH == 0 & instrument$ACS == 1) {
       ix.BB9.wl = rep(NA,9)
       for (j in 1:9){
-        ix.BB9.wl[j] = which.min(abs(ACS$a.wl-BB9$wl[j]))
+        ix.BB9.wl[j] = which.min(abs(ACS$a.wl-BB9$waves[j]))
       }
       dt = difftime(max(BB9$Time), min(BB9$Time), units="secs")
       # use a 10 seconds time window to define the span parameter
-      span.BB9 =    10 / as.numeric(dt)
+      span.BB9 =    max(max(10 / as.numeric(dt), 0.1), 0.1)
+      
       tmp = fit.with.loess(ACS$a.wl[ix.BB9.wl], ACS$Timer,
                              ACS$a.corrected[,ix.BB9.wl], span.BB9, BB9$Timer)
       a.bb9 = tmp$aop.fitted
 
       # clean the data in case of outliers
-      a.bb9[a.bb9 > 1] = 0
+      #a.bb9[a.bb9 > 1] = 0
       a.bb9[a.bb9 < 0] = 0
 
       # New pathlenght estimated by Doxaran et al 2016
@@ -1177,7 +1298,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       }
       dt = difftime(max(BB3$Time), min(BB3$Time), units="secs")
       # use a 10 seconds time window to define the span parameter
-      span.BB3 =    10 / as.numeric(dt)
+      span.BB3 =    max(10 / as.numeric(dt), 0.1)
       tmp = fit.with.loess(ASPH$wl[ix.BB3.wl], as.numeric(ASPH$time),
                            ASPH$a.corrected[,ix.BB3.wl], span.BB3, as.numeric(BB3$Time))
       a.BB3 = tmp$aop.fitted
@@ -1198,7 +1319,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       }
       dt = difftime(max(BB3$Time), min(BB3$Time), units="secs")
       # use a 10 seconds time window to define the span parameter
-      span.BB3 =    10 / as.numeric(dt)
+      span.BB3 =    max(10 / as.numeric(dt), 0.1)
       tmp = fit.with.loess(ACS$a.wl[ix.BB3.wl], ACS$Timer,
                            ACS$a.corrected[,ix.BB3.wl], span.BB3, BB3$Timer)
       a.BB3 = tmp$aop.fitted
@@ -1559,6 +1680,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   #######  Interpolate BB9 data#####
   if (instrument$BB9 == 1){
     print("Bin BB9....")
+    print("HELLO LE BUGGGG")
     BB9.fitted.down=list()
     BB9.fitted.up=list()
 
@@ -1566,21 +1688,24 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     ########## Get BB9 index
     # find the index to start and stop profile
     abs.diff.time = as.numeric(abs(difftime(BB9$Time, time.window[1])))
-    BB9$ixmin = which(abs.diff.time == min(abs.diff.time))
+    BB9$ixmin = which(abs.diff.time == min(abs.diff.time))[1]
     abs.diff.time = as.numeric(abs(difftime(BB9$Time, time.window[2])))
     BB9$ixmax = which(abs.diff.time == min(abs.diff.time))
 
     z.max = max(BB9$Depth[BB9$ixmin:BB9$ixmax])
     ix.z.max = which(BB9$Depth == z.max)[1]
     BB9$ix.z.max = ix.z.max
-
-    tmp=fit.with.loess(BB9$wl, BB9$Depth[BB9$ixmin:ix.z.max],
-                       BB9$bbP.offset[BB9$ixmin:ix.z.max,],
+    
+    print(BB9$ixmin)
+    str(BB9)
+    
+    tmp=fit.with.loess(BB9$waves, BB9$Depth[BB9$ixmin:ix.z.max],
+                       BB9$bbP.corrected[BB9$ixmin:ix.z.max,],
                        span=span.BB9, depth.fitted)
     BB9.fitted.down$bbP = tmp$aop.fitted
 
-    tmp=fit.with.loess(BB9$wl, BB9$Depth[BB9$ixmin:ix.z.max],
-                       BB9$bb.offset[BB9$ixmin:ix.z.max,],
+    tmp=fit.with.loess(BB9$waves, BB9$Depth[BB9$ixmin:ix.z.max],
+                       BB9$bb.corrected[BB9$ixmin:ix.z.max,],
                        span=span.BB9, depth.fitted)
     BB9.fitted.down$bb = tmp$aop.fitted
 
@@ -1595,7 +1720,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
     #### Compute bbp spectral slope for down cast
 
-    x = 555/BB9$wl
+    x = 555/BB9$waves
     nz=length(depth.fitted)
     bbP555=rep(0,nz)
     nuP=rep(0,nz)
@@ -1619,13 +1744,13 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     if ((BB9$ixmax - ix.z.max) < 5) {
       print("No BB9 upcast to fit")
     } else {
-      tmp=fit.with.loess(BB9$wl, BB9$Depth[BB9$ixmax:ix.z.max],
-                         BB9$bbP.offset[BB9$ixmax:ix.z.max,],
+      tmp=fit.with.loess(BB9$waves, BB9$Depth[BB9$ixmax:ix.z.max],
+                         BB9$bbP.corrected[BB9$ixmax:ix.z.max,],
                          span=span.BB9, depth.fitted)
       BB9.fitted.up$bbP = tmp$aop.fitted
 
-      tmp=fit.with.loess(BB9$wl, BB9$Depth[BB9$ixmax:ix.z.max],
-                         BB9$bb.offset[BB9$ixmax:ix.z.max,],
+      tmp=fit.with.loess(BB9$waves, BB9$Depth[BB9$ixmax:ix.z.max],
+                         BB9$bb.corrected[BB9$ixmax:ix.z.max,],
                          span=span.BB9, depth.fitted)
       BB9.fitted.up$bb = tmp$aop.fitted
 
@@ -1664,12 +1789,12 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     BB3$ix.z.max = ix.z.max
 
     tmp=fit.with.loess(BB3$wl, BB3$Depth[BB3$ixmin:ix.z.max],
-                       BB3$bbP.offset[BB3$ixmin:ix.z.max,],
+                       BB3$bbP.corrected[BB3$ixmin:ix.z.max,],
                        span=span.BB3, depth.fitted)
     BB3.fitted.down$bbP = tmp$aop.fitted
 
     tmp=fit.with.loess(BB3$wl, BB3$Depth[BB3$ixmin:ix.z.max],
-                       BB3$bb.offset[BB3$ixmin:ix.z.max,],
+                       BB3$bb.corrected[BB3$ixmin:ix.z.max,],
                        span=span.BB3, depth.fitted)
     BB3.fitted.down$bb = tmp$aop.fitted
 
@@ -1709,12 +1834,12 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       print("No BB3 upcast to fit")
     } else {
       tmp=fit.with.loess(BB3$wl, BB3$Depth[BB3$ixmax:ix.z.max],
-                         BB3$bbP.offset[BB3$ixmax:ix.z.max,],
+                         BB3$bbP.corrected[BB3$ixmax:ix.z.max,],
                          span=span.BB3, depth.fitted)
       BB3.fitted.up$bbP = tmp$aop.fitted
 
       tmp=fit.with.loess(BB3$wl, BB3$Depth[BB3$ixmax:ix.z.max],
-                         BB3$bb.offset[BB3$ixmax:ix.z.max,],
+                         BB3$bb.corrected[BB3$ixmax:ix.z.max,],
                          span=span.BB3, depth.fitted)
       BB3.fitted.up$bb = tmp$aop.fitted
 

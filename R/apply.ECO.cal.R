@@ -9,6 +9,7 @@
 #' Must be consistent with the ECO.type VSF3, BB9 (or BB3 not implemented yet)  
 #' @param ECO.bands must be provided if ECO.type == VSF3. It is a character string indicating the bands (BLUE, GREEN and RED), 
 #' i.e. either "B", "G", "R" or "BG", or "BGR". 
+#' @param VERBOSE is a logical value to out put comments
 #' 
 #' @return It returns a list with raw data and calibrated VSF (uncorrected). 
 #' 
@@ -19,14 +20,15 @@ apply.ECO.cal <- function(raw,
                           dev.file=NA, 
                           dark.file=NA,
                           ECO.type="VSF3",
-                          ECO.bands=NA) {
+                          ECO.bands=NA, 
+                          VERBOSE=FALSE) {
   
   if (is.na(dev.file)) {
     print("No device file provided")
     print("Abort processing")
     return(0)
   } 
-  print(paste("Reading the device file", dev.file))
+  if (VERBOSE) print(paste("Reading the device file", dev.file))
   cal <- read.ECO.dev.file(dev.file, ECO.type=ECO.type)
   print(cal)
   
@@ -44,20 +46,20 @@ apply.ECO.cal <- function(raw,
         B.offset = matrix(cal$cal$Offset[1:3], nrow=raw$nrec, ncol=3, byrow=T)
         # read dark if provided and compute the inter-quantile mean
         if (!is.na(dark.file)) {
-          print(paste("Reading dark file: ", dark.file))
+          if (VERBOSE)  print(paste("Reading dark file: ", dark.file))
           dark <- read.ECOVSF(dark.file, ECO.bands = ECO.bands)
           B.offset.dark = c(median(dark$raw$B100, na.rm=T),
                             median(dark$raw$B125, na.rm=T),
                             median(dark$raw$B150, na.rm=T))
           #### print dark off sets and compare to calibration
-          print("Blue offset from calibration and dark")
-          print(B.offset[1,])
-          print(B.offset.dark)
+          if (VERBOSE) print("Blue offset from calibration and dark")
+          if (VERBOSE) print(B.offset[1,])
+          if (VERBOSE) print(B.offset.dark)
           B.offset = matrix(B.offset.dark, nrow=raw$nrec, ncol=3, byrow=T)
           dark.offset = TRUE
         } 
         else {
-          print("Use offsets from calibration")
+          if (VERBOSE) print("Use offsets from calibration")
           dark.offset = FALSE
         }
         ## Apply calibration to Blue  
@@ -78,20 +80,20 @@ apply.ECO.cal <- function(raw,
         G.offset = matrix(cal$cal$Offset[4:6], nrow=raw$nrec, ncol=3, byrow=T)
         # read dark if provided and compute the inter-quantile mean
         if (!is.na(dark.file)) {
-          print(paste("Reading dark file: ", dark.file))
+          if (VERBOSE) print(paste("Reading dark file: ", dark.file))
           dark <- read.ECOVSF(dark.file, ECO.bands = ECO.bands)
           G.offset.dark = c(median(dark$raw$G100, na.rm = T),
                             median(dark$raw$G125, na.rm = T),
                             median(dark$raw$G150, na.rm = T))
           #### print dark off sets and compare to calibration
-          print("Green offset from calibration and dark")
-          print(G.offset[1,])
-          print(G.offset.dark)
+          if (VERBOSE) print("Green offset from calibration and dark")
+          if (VERBOSE) print(G.offset[1,])
+          if (VERBOSE) print(G.offset.dark)
           G.offset = matrix(G.offset.dark, nrow=raw$nrec, ncol=3, byrow=T)
           dark.offset = TRUE
         } 
         else {
-          print("Use offsets from calibration")
+          if (VERBOSE) print("Use offsets from calibration")
           dark.offset = FALSE
         }
         ## Apply calibration to Green  
@@ -112,20 +114,20 @@ apply.ECO.cal <- function(raw,
         R.offset = matrix(cal$cal$Offset[7:9], nrow=raw$nrec, ncol=3, byrow=T)
         # read dark if provided and compute the inter-quantile mean
         if (!is.na(dark.file)) {
-          print(paste("Reading dark file: ", dark.file))
+          if (VERBOSE) print(paste("Reading dark file: ", dark.file))
           dark <- read.ECOVSF(dark.file, ECO.bands = ECO.bands)
          R.offset.dark = c(median(dark$raw$R100, na.rm=T),
                            median(dark$raw$R125, na.rm=T),
                            median(dark$raw$R150, na.rm=T))
           #### print dark off sets and compare to calibration
-          print("Red offset from calibration and dark")
-          print(R.offset[1,])
-          print(R.offset.dark)
+         if (VERBOSE) print("Red offset from calibration and dark")
+         if (VERBOSE) print(R.offset[1,])
+         if (VERBOSE) print(R.offset.dark)
           R.offset = matrix(R.offset.dark, nrow=raw$nrec, ncol=3, byrow=T)
           dark.offset = TRUE
         } 
         else {
-          print("Use offsets from calibration")
+          if (VERBOSE) print("Use offsets from calibration")
           dark.offset = FALSE
         }
         ## Apply calibration to Green  
@@ -150,7 +152,7 @@ apply.ECO.cal <- function(raw,
         
         # read dark if provided and compute the inter-quantile mean
         if (!is.na(dark.file)) {
-          print(paste("Reading dark file: ", dark.file))
+          if (VERBOSE) print(paste("Reading dark file: ", dark.file))
           dark <- read.ECOVSF(dark.file, ECO.bands = ECO.bands)
           B.offset.dark = c(median(dark$raw$B100,na.rm = T),
                             median(dark$raw$B125,na.rm = T),
@@ -159,18 +161,18 @@ apply.ECO.cal <- function(raw,
                             median(dark$raw$G125,na.rm = T),
                             median(dark$raw$G150,na.rm = T))
           #### print dark off sets and compare to calibration
-          print("Blue offset from calibration and dark")
-          print(B.offset[1,])
-          print(B.offset.dark)
+          if (VERBOSE) print("Blue offset from calibration and dark")
+          if (VERBOSE) print(B.offset[1,])
+          if (VERBOSE) print(B.offset.dark)
           B.offset = matrix(B.offset.dark, nrow=raw$nrec, ncol=3, byrow=T)
           dark.offset = TRUE
-          print("Green offset from calibration and dark")
-          print(G.offset[1,])
-          print(G.offset.dark)
+          if (VERBOSE) print("Green offset from calibration and dark")
+          if (VERBOSE) print(G.offset[1,])
+          if (VERBOSE) print(G.offset.dark)
           G.offset = matrix(G.offset.dark, nrow=raw$nrec, ncol=3, byrow=T)
         } 
         else {
-          print("Use offsets from calibration")
+          if (VERBOSE) print("Use offsets from calibration")
           dark.offset = FALSE
         }
         ## Apply calibration to Blue  
@@ -198,7 +200,7 @@ apply.ECO.cal <- function(raw,
     offset = matrix(cal$cal$Offset, nrow=raw$nrec, ncol=9, byrow=T)
     # read dark if provided and compute the inter-quantile mean
     if (!is.na(dark.file)) {
-      print(paste("Reading dark file: ", dark.file))
+      if (VERBOSE) print(paste("Reading dark file: ", dark.file))
       dark <- read.BB9(dark.file, raw=TRUE)
       dark.offset <- rep(NA,9)
       for (i in 1:9) {
@@ -206,13 +208,13 @@ apply.ECO.cal <- function(raw,
                    dark$raw[,i] > quantile(dark$raw[,i], probs = 0.25, na.rm = T))
         dark.offset[i] <- mean(dark$raw[ix,i])
       }
-      print("Offsets from calibration and dark")
-      print(offset[1,])
-      print(dark.offset)
+      if (VERBOSE) print("Offsets from calibration and dark")
+      if (VERBOSE) print(offset[1,])
+      if (VERBOSE) print(dark.offset)
       offset = matrix(dark.offset, nrow=raw$nrec, ncol=9, byrow=T)
       dark.offset = TRUE
     } else {
-      print("Use offsets from calibration")
+      if (VERBOSE) print("Use offsets from calibration")
       dark.offset = FALSE
     }
     
@@ -220,8 +222,8 @@ apply.ECO.cal <- function(raw,
     Betau = (raw$raw - offset) * scaling.factor
     
     return(list(raw=raw$raw,
-                time=raw$Timer,
-                waves=raw$wl,
+                Timer=raw$Timer,
+                waves=raw$waves,
                 Betau=Betau,
                 nrec=raw$nrec,
                 dark.offset=dark.offset,

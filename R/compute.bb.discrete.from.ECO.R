@@ -462,24 +462,28 @@ compute.bb.discrete.from.ECO <- function(eco,
                 end=end))
   }
   if (ECO.type == "BB3") {
-    plot(eco$time, eco$Betau[,2], 
+    # eco$time does not exist (eco created in apply.ECO.cal) eco$Timer exist. 
+    # use seq_along cause BB3 timer is UTC Time (character) and that create a bug in xlim
+    plot(seq_along(eco$Timer), eco$Betau[,2], 
          ylim=c(min(eco$Betau, na.rm = T), max(eco$Betau,  na.rm = T)), 
          pch=19, cex=0.5, 
          main="VSF for the green",
          sub=paste(Station, DateTime),
          xlab="time (s)", ylab="uncorrected VSF (/m /sr)")
-    points(eco$time, eco$Betau[,1], col=2,pch=19,cex=0.5)
-    points(eco$time, eco$Betau[,3], col=3,pch=19,cex=0.5)
-    #legend("topleft", c('440',"532","715"), pch=c(19,19,19), col=c(2,1,3))
+    points(seq_along(eco$Timer), eco$Betau[,1], col=2,pch=19,cex=0.5)
+    points(seq_along(eco$Timer), eco$Betau[,3], col=3,pch=19,cex=0.5)
+    legend("topleft", c('440',"532","715"), pch=c(19,19,19), col=c(2,1,3))
     
-    if (start == 999) {
+    # Not sure about the control flow here ...
+    # if Start and en in log are NA, it will error out
+    if (is.na(start)) {
       print("Click for the begining of the cast and then ESC")
-      start <- identify(eco$time, eco$Betau[,2])
+      start <- identify(seq_along(eco$Timer), eco$Betau[,2])
       print("Click for the end of the cast and then ESC")
-      end <- identify(eco$time, eco$Betau[,2])
+      end <- identify(seq_along(eco$Timer), eco$Betau[,2])
     }
-    if (end == 999) {
-      end <- length(eco$time)
+    if (is.na(end)) {
+      end <- length(seq_along(eco$Timer))
     }
     
     Betau.mean = apply(eco$Betau[start:end,],2,mean,na.rm=T)
@@ -487,8 +491,7 @@ compute.bb.discrete.from.ECO <- function(eco,
     
     ###### Apply absorption correction
     if (is.na(Anw[1]) | length(Anw) != 3) {
-      print("Non-water absorption not provided or does not have 3 wavelengths ")
-      print("No absorption correction applied")
+      warning("Non-water absorption not provided or does not have 3 wavelengths\nNo absorption correction applied")
       ABS.COR = FALSE
       Beta = Betau.mean
     } else {
@@ -507,6 +510,7 @@ compute.bb.discrete.from.ECO <- function(eco,
       S.fac  <- (1+(0.3*Salinity/37))*1e-4 * (1+ cos(117/180*pi)*cos(117/180*pi)*((1-0.09)/(1+0.09)))
       SAL.COR <- TRUE 
     } else {
+      warning("Salinity not provided, no correction")
       Salinity <- 0
       S.fac  <- (1+(0.3*Salinity/37))*1e-4 * (1+ cos(117/180*pi)*cos(117/180*pi)*((1-0.09)/(1+0.09)))
       SAL.COR <- FALSE 

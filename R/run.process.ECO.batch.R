@@ -7,12 +7,12 @@
 #'  due to attenuation along the pathlength. 
 #'  The VSF is finaly converted in to total backscattering and particles backscattering. 
 #' 
-#' @param log.file is the name of the ASCII file (semicolumn-delimated text) containing the
+#' @param log.file is the name of the ASCII file in .csv (comma separated value) containing the
 #' list of samples to process (see details below).
 #' @param data.path is the full path where the ECO data are stored 
 #' 
 #' @details The most important thing to do before runing this programm is to prepare
-#' the log.file. This file contains fields (semi-column delimiter) : 
+#' the log.file. This file contains fields (comma delimiter) : 
 #' ECO.filename; dev.file; ECO.type; ECO.bands; Station; Date; UTCTime; 
 #' Depth; Salinity; dark.file; start; end; process; Anw1;..;AnwX
 #' The ASCII files are:
@@ -37,7 +37,7 @@
 #' the end of the cast.}
 #'  \item{process: }{is a boolean value indicating if the file has to be process (1) or not (0)  }
 #'  \item{Anw1..AnwX: }{is the non-water absorption for each wavelength of the ECO meter. 
-#'  For a BB9, for example, nine columns in expected}
+#'  For a BB9, for example, nine columns are expected}
 #'  }
 #'  
 #'  The code will process each file one by one and will output a RData file for each raw file processed. 

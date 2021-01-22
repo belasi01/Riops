@@ -491,10 +491,11 @@ compute.bb.discrete.from.ECO <- function(eco,
     
     ###### Apply absorption correction
     if (is.na(Anw[1]) | length(Anw) != 3) {
-      warning("Non-water absorption not provided or does not have 3 wavelengths\nNo absorption correction applied")
+      warning("Non-water absorption not provided or does not have 3 wavelengths\nNo absorption correction applied.\n Anw: ", paste(Anw, collapse = " "))
       ABS.COR = FALSE
       Beta = Betau.mean
     } else {
+      message("Anw: ", paste(Anw, collapse = " "))
       Beta = Betau.mean*exp(Anw*0.01635) # The pathlenght is from Doxaran et al 2016
       ABS.COR = TRUE
     }

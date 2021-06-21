@@ -7,12 +7,12 @@
 #'  due to attenuation along the pathlength. 
 #'  The VSF is finaly converted in to total backscattering and particles backscattering. 
 #' 
-#' @param log.file is the name of the ASCII file (semicolumn-delimated text) containing the
+#' @param log.file is the name of the ASCII file in .csv (comma separated value) containing the
 #' list of samples to process (see details below).
 #' @param data.path is the full path where the ECO data are stored 
 #' 
 #' @details The most important thing to do before runing this programm is to prepare
-#' the log.file. This file contains fields (semi-column delimiter) : 
+#' the log.file. This file contains fields (comma delimiter) : 
 #' ECO.filename; dev.file; ECO.type; ECO.bands; Station; Date; UTCTime; 
 #' Depth; Salinity; dark.file; start; end; process; Anw1;..;AnwX
 #' The ASCII files are:
@@ -37,7 +37,7 @@
 #' the end of the cast.}
 #'  \item{process: }{is a boolean value indicating if the file has to be process (1) or not (0)  }
 #'  \item{Anw1..AnwX: }{is the non-water absorption for each wavelength of the ECO meter. 
-#'  For a BB9, for example, nine columns in expected}
+#'  For a BB9, for example, nine columns are expected}
 #'  }
 #'  
 #'  The code will process each file one by one and will output a RData file for each raw file processed. 
@@ -50,16 +50,14 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
         print("Data path exists")
         print(data.path)
       } else {
-        print("data.path does not exist!")
-        print("STOP processing")
-        return(0)
+        stop("data.path: ",data.path,"/n does not exist!")
       }
        
   # Check the output directories and Create them if they are not available.
   path.png = file.path(data.path,"png/") #paste(data.path,"/png/", sep="")
   path.out = file.path(data.path,"RData/") #paste(data.path,"/RData/", sep="")
-  path.dark = file.path(data.path,"dark/")
-  path.raw = file.path(data.path,"raw/")
+  path.dark = file.path(data.path,"dark")
+  path.raw = file.path(data.path,"raw")
   
   if (!file.exists(path.dark)) {
     print("No folder named dark found")
@@ -67,7 +65,7 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
     print("Create a folder:")
     print(path.dark)
     print("and put your dark files in it")
-    return(0)
+    stop()
   } else print(paste("Dark in :",path.dark))
   
   if (!file.exists(path.raw)) {
@@ -76,7 +74,7 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
     print("Create a folder:")
     print(path.raw)
     print("and put your data files in it")
-    return(0)
+    stop()
   } else print(paste("Raw data in :",path.raw))
   
   if (!file.exists(path.png)) dir.create(path.png)
@@ -87,12 +85,11 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
     default.log.file =  file.path(Sys.getenv("Riop_DATA_DIR"), "log.ECO.txt")
     
     file.copy(from = default.log.file, to = log.file)
-    cat("EDIT file", log.file, "and CUSTOMIZE IT\n")
-    return(0)
+    stop("EDIT file", log.file, "and CUSTOMIZE IT\n")
   }
   
-  print("Read Log with semi-column delimiter" )
-  log = read.table(file=log.file, header=T, sep=";")
+  print("Read Log with comma delimiter" )
+  log = read.table(file=log.file, header=T, sep=",")
 
 
   nfiles = length(log$ECO.filename)
@@ -101,28 +98,23 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
     
     if (log$process[i] == 1) {
       
-      raw.file <- paste(path.raw,log$ECO.filename[i], sep="/")
+      raw.file <- file.path(path.raw,paste0(log$ECO.filename[i],".raw"))
       if (file.exists(raw.file)) {
-        print(paste("Processing ", raw.file))
+        message("Processing ", raw.file)
         if (log$ECO.type[i] == "VSF3") raw <- read.ECOVSF(raw.file, ECO.bands=log$ECO.bands[i])
         if (log$ECO.type[i] == "BB9") raw <- read.BB9(raw.file, raw=TRUE)
         if (log$ECO.type[i] == "BB3") raw <- read.BB3(raw.file, raw=TRUE)
       } else {
-        print("WARNING no data file")
-        print(raw.file)
-        print("Abort processing!")
-        return(0)
+        stop("no raw file: ",raw.file)
       }
       
       if (file.exists(as.character(log$dev.file[i]))) {
         cal <- read.ECO.dev.file(as.character(log$dev.file[i]), ECO.type = log$ECO.type[i])
       } else {
-        print("No device file found")
-        print("Abort processing")
-        return(0)
+        stop("No device file found: ", log$dev.file[i])
       }
       
-      dark.file <- paste(path.dark,log$dark.file[i], sep="/")
+      dark.file <- file.path(path.dark,log$dark.file[i])
       if (file.exists(dark.file)) {
         eco <- apply.ECO.cal(raw, 
                              dev.file = as.character(log$dev.file[i]), 
@@ -130,7 +122,7 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
                              ECO.type = log$ECO.type[i],
                              ECO.bands =log$ECO.bands[i])
       } else {
-        print("WARNING no dark data file or dark file not found")
+        warning("no dark data file or dark file not found")
         eco <- apply.ECO.cal(raw, 
                             dev.file = as.character(log$dev.file[i]), 
                             dark.file = NA,
@@ -309,10 +301,10 @@ run.process.ECO.batch <- function(log.file="log.txt", data.path="./"){
       } 
       
       # Save data in RData file format
-      save(bb, file=paste(path.out,"/",log$ECO.filename[i], ".RData", sep=""))
+      save(bb, file=file.path(path.out,paste0(log$ECO.filename[i], ".RData")))
       
       # update log file 
-      write.table(log, file=log.file, quote = F, row.names = F, sep=";")
+      write.table(log, file=log.file, quote = F, row.names = F, sep=",")
       
     } else print(paste("Skipping file:", log$ECO.filename[i]))
     

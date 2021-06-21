@@ -24,9 +24,7 @@ apply.ECO.cal <- function(raw,
                           VERBOSE=FALSE) {
   
   if (is.na(dev.file)) {
-    print("No device file provided")
-    print("Abort processing")
-    return(0)
+    stop("No device file provided")
   } 
   if (VERBOSE) print(paste("Reading the device file", dev.file))
   cal <- read.ECO.dev.file(dev.file, ECO.type=ECO.type)
@@ -228,12 +226,43 @@ apply.ECO.cal <- function(raw,
                 nrec=raw$nrec,
                 dark.offset=dark.offset,
                 offset=offset[1,]))
-    
   }
     
   if (ECO.type=="BB3") {
-    print("Not available yet")
-    return(NULL)
+    # prepare calibration 
+    scaling.factor = matrix(cal$cal$ScalingFactor, nrow=raw$nrec, ncol=3, byrow=T)
+    offset = matrix(cal$cal$Offset, nrow=raw$nrec, ncol=3, byrow=T)
+    # read dark if provided and compute the inter-quantile mean
+    if (file.exists(dark.file)) {
+      if (VERBOSE) print(paste("Reading dark file: ", dark.file))
+      dark <- read.BB3(dark.file, raw=TRUE)
+      dark.offset <- rep(NA,3)
+      for (i in 1:3) {
+        # Change to <= and >= in case quantile 0.75 = 50 and 0.25 = 49 
+        ix = which(dark$raw[,i] <= quantile(dark$raw[,i], probs = 0.75, na.rm = T) &
+                     dark$raw[,i] >= quantile(dark$raw[,i], probs = 0.25, na.rm = T))
+        dark.offset[i] <- mean(dark$raw[ix,i])
+      }
+      if (VERBOSE){
+        message("Offsets from calibration: ",paste(offset[1,], collapse = " "),"\n and dark: ",paste(round(dark.offset, 2), collapse = " "))
+      }
+      offset = matrix(dark.offset, nrow=raw$nrec, ncol=3, byrow=T)
+      dark.offset = TRUE
+    } else {
+      if (VERBOSE) message("Use offsets from calibration")
+      dark.offset = FALSE
+    }
+    
+    ## Apply calibration 
+    Betau = (raw$raw - offset) * scaling.factor
+    
+    return(list(raw=raw$raw,
+                Timer=raw$Timer,
+                waves=raw$waves,
+                Betau=Betau,
+                nrec=raw$nrec,
+                dark.offset=dark.offset,
+                offset=offset[1,]))
   }
     
 }

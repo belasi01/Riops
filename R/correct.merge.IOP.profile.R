@@ -80,6 +80,8 @@
 #'     Wetlabs for the ACS calibration. The IML ACs calibration of 2013 was 20.3}
 #'     \item{\strong{scat.correction}}{ is the method for the scattering correction of AC-S abssorption
 #'                   (eg : "mckee","zaneveld", "baseline","none")}
+#'     \item{\strong{mckee.rw}}{ is the reflectivity of glass wall for the scattering correction of AC-S abssorption
+#'                   using mckee 2013 method}
 #'     \item{\strong{blank.ASPH}}{ is a string for the path of the blank for ASPH as created by
 #'     \code{\link{analyse.ASPH.blank}}.}
 #'     \item{\strong{blank.ACS}}{ is a string for the path of the blank for ACS as created by
@@ -138,6 +140,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   if (!is.null(parameters$Tref.ACS) & !is.null(parameters$scat.correction)) {
     Tref.ACS =   parameters$Tref.ACS
     scat.correction = parameters$scat.correction
+    mckee.rw = parameters$mckee.rw
   } else {
     if (instrument$ACS == 1) {
       print("WARNING: AC-s calibration temperature of PW and scat.correction method must be provided!!!")
@@ -679,7 +682,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       BB9$Time <- Time0.CTD + BB9$Timer # Here the timer is in second
       plot(BB9$Time, BB9$Betau[,2])
       print("Click for the BB9 time stamp when exiting the water")
-      ixBB9 = identify(BB9$Time, BB9$Betau[,2])
+      ixBB9 = identify(x = BB9$Time, y=BB9$Betau[,2])
       plot(CTD$Time, CTD$Sal)
       print("Click for the CTD time stamp when exiting the water")
       ixCTD = identify(CTD$Time, CTD$Sal)
@@ -992,7 +995,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     #c.nir[c.nir > 50] = NA
 
     # Mckee et al Opt. Express 2008 method
-    if (scat.correction == "mckee") {
+    if (scat.correction == "mckee08") {
       if (instrument$BB9 ==1) {
 
         # First correct BB9 data using ACS absorption corrected using zaneveld
@@ -1033,7 +1036,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
         BB9$bbP.corrected    <- Beta2bb * BB9$BetaP.corrected
 
         # Extrapolate bbp to match ACS data matrix.
-        # Only use the extremity to avoid extrapolation artefact
+        # Only use the extremity to avoid extrapolation artifact
         # A nls fit could be implemented eventually
         good.ix <- which(!is.na(BB9$bbP.corrected[,1]))
 
@@ -1082,7 +1085,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
         ACS$a.corrected = an
         ACS$c.corrected = cn
-        ACS$scat.correction.method = "mckee"
+        ACS$scat.correction.method = "mckee08"
 
 
       } else {
@@ -1096,7 +1099,255 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       }
 
     }
+    
+    # Mckee et al Opt. Express 2013 method
+    if (scat.correction == "mckee13") {
+      if (instrument$BB9 ==1) {
+        
+        # First correct BB9 data using ACS absorption corrected using zaneveld
+        b.nir = c.nir - a.nir
+        scat.factor = a.nir / b.nir
+        scat.factor[scat.factor < 0] = 0
+        scat.factor.m = matrix(scat.factor, nrow=length(ACS$Depth), ncol=length(ACS$a.wl), byrow=F)
+        b_star = ACS$c.corrected - ACS$a.TScor.offset
+        ACS$a.corrected   = ACS$a.TScor.offset - (scat.factor.m * b_star)
+        print("Starting Mckee et al., 2013 correction")
+        
+        # correct bb9 data
+        # Compute Pure Water beta
+        S.fac = (1+(0.3*BB9$S/37))*1e-4 * (1+ cos(117/180*pi)*cos(117/180*pi)*((1-0.09)/(1+0.09)))
+        wl.fac = 1.38*(BB9$waves/500)^-4.32
+        S.fac.m = matrix(S.fac, nrow=length(BB9$Depth), ncol=length(BB9$waves), byrow=F)
+        wl.fac.m = matrix(wl.fac, nrow=length(BB9$Depth), ncol=length(BB9$waves),byrow=T)
+        
+        BetaW = S.fac.m * wl.fac.m
+        bbW = (0.0029308*(BB9$waves/500)^-4.24)/2
+        bbW.m = matrix(bbW, nrow=length(BB9$Depth), ncol=length(BB9$waves), byrow=T)
+        
+        Beta2bb <- 2*pi*1.1
+        
+        ix.BB9.wl = rep(NA,9)
+        for (j in 1:9){
+          ix.BB9.wl[j] = which.min(abs(ACS$a.wl-BB9$waves[j]))
+        }
+        dt = difftime(max(BB9$Time), min(BB9$Time), units="secs")
+        # use a 10 seconds time window to define the span parameter
+        span.BB9 =    max(10 / as.numeric(dt), 0.1)
+        tmp = fit.with.loess(ACS$a.wl[ix.BB9.wl], as.numeric(ACS$Time),
+                             ACS$a.corrected[,ix.BB9.wl], span.BB9, as.numeric(BB9$Time))
+        a.bb9 = tmp$aop.fitted
+        # New pathlenght estimated by Doxaran et al 2016
+        BB9$Beta.corrected   <- BB9$Betau * exp(0.01635*a.bb9)
+        BB9$BetaP.corrected  <- BB9$Beta.corrected - BetaW
+        BB9$bbP.corrected    <- Beta2bb * BB9$BetaP.corrected
+        
+        # Extrapolate bbp to match ACS data matrix.
+        # Only use the extremity to avoid extrapolation artifact
+        # A nls fit could be implemented eventually
+        good.ix <- which(!is.na(BB9$bbP.corrected[,1]))
+        
+        bbP.acs = t(apply(BB9$bbP.corrected[good.ix,c(2,9)],1,
+                          function(y){
+                            res = spline(BB9$waves[c(2,9)],y,xout=ACS$c.wl, method="natural")$y
+                          }))
+        
+        # now interpolate for depth
+        dt = difftime(max(ACS$Time), min(ACS$Time), units="secs")
+        span.ACS =    max(10 / as.numeric(dt), 0.1)
+        tmp = fit.with.loess(ACS$c.wl, as.numeric(BB9$Time[good.ix]),
+                             bbP.acs, span.ACS, as.numeric(ACS$Time))
+        bbP.acs = tmp$aop.fitted # overwrite
+        
+        bbp.tild.0 = bbP.acs / (1.5*b_star)  # from Mckee et al. (Fig. 4)
+        
+        load("C:/R/Riops/data/mckee13_fa.RData")
+        print(paste0("The glass tube reflectivity factor provided is: ", mckee.rw))
+        #Calculate fraction of scattered light not collected in a-tube
+        if (mckee.rw == 1) {
+          idx <- which(mckee13_fa$rw == 1)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.999) {
+          idx <- which(mckee13_fa$rw == 0.999)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.998) {
+          idx <- which(mckee13_fa$rw == 0.998)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.995) {
+          idx <- which(mckee13_fa$rw == 0.995)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.990) {
+          idx <- which(mckee13_fa$rw == 0.990)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.985) {
+          idx <- which(mckee13_fa$rw == 0.985)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.980) {
+          idx <- which(mckee13_fa$rw == 0.980)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.970) {
+          idx <- which(mckee13_fa$rw == 0.970)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.960) {
+          idx <- which(mckee13_fa$rw == 0.960)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        if (mckee.rw == 0.950) {
+          idx <- which(mckee13_fa$rw == 0.950)
+          fa0 = apply(bbp.tild.0, 2, function(x){
+            y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+        }
+        
+        print(paste0("Fraction of scattered light not collected in a-tube is calculated for rw = ", mckee.rw))
+        
+        #Calculate fraction of scattered light  collected in c-tube
+        fc0 = apply(bbp.tild.0, 2, function(x){
+          y =  6.809e-3/(8.502e-3+x)-(1.918e-2)})
+        print("Fraction of scattered light collected in c-tube is calculated")
+        
+        bp1 = b_star / (1 - fa0 - fc0)  # from Mckee et al. (eq. 7)
+        
+        bbp.tild.1 = bbP.acs / bp1  # get a first approximation of bbp tild
+        
+        for (j in 1:10) {  # Replace the condition by a fixed number of iterations.
+          #  This is to speed up the processing
+          prev.bbp.tild = bbp.tild.1
+          # fa1 = apply(bbp.tild.1, 2, function(x){
+          #   y = 2.699e-3 + 4.636*x - 3.746e1 *x^2 + 3.177e2*x^3 -1.166e3*x^4})
+          
+          if (mckee.rw == 1) {
+            idx <- which(mckee13_fa$rw == 1)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.999) {
+            idx <- which(mckee13_fa$rw == 0.999)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.998) {
+            idx <- which(mckee13_fa$rw == 0.998)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.995) {
+            idx <- which(mckee13_fa$rw == 0.995)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.990) {
+            idx <- which(mckee13_fa$rw == 0.990)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.985) {
+            idx <- which(mckee13_fa$rw == 0.985)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.980) {
+            idx <- which(mckee13_fa$rw == 0.980)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.970) {
+            idx <- which(mckee13_fa$rw == 0.970)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.960) {
+            idx <- which(mckee13_fa$rw == 0.960)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          if (mckee.rw == 0.950) {
+            idx <- which(mckee13_fa$rw == 0.950)
+            fa1 = apply(bbp.tild.0, 2, function(x){
+              y = mckee13_fa$a0[idx] + mckee13_fa$a1[idx]*x + mckee13_fa$a2[idx] *x^2 + mckee13_fa$a3[idx]*x^3 + mckee13_fa$a4[idx]*x^4 + mckee13_fa$a5[idx]*x^5 + mckee13_fa$a6[idx]*x^6})
+          }
+          
+          fc1 = apply(bbp.tild.1, 2, function(x){
+            y =  6.809e-3/(8.502e-3+x)-(1.918e-2)})
+          
+          an = ACS$a.TScor.offset - (fa1*b_star)/(1-fa1-fc1)
+          
+          cn = ACS$c.corrected + (fc1*b_star)/(1-fa1-fc1)
+          
+          bp2 = cn - an
+          
+          bbp.tild.1 = bbP.acs / bp2
+          
+        }
+        
+        ACS$a.corrected = an
+        ACS$c.corrected = cn
+        ACS$scat.correction.method = "mckee13"
+        print(paste0("Mckee et al., 2013 scatter correction in a &c tubes finished for rw = ", mckee.rw))
+        
+        
+      } else {
+        # if (instrument$HS6 ==1) {
+        # TO BE IMPLEMENTED
+        #  } else {
+        print("No backscattering measurements to apply Mckee et al method")
+        print("Automatical change correction to Rotgers13 method")
+        scat.correction = "rotgers13"
+        #  }
+      }
+      
+    }
 
+    # Rotgers 2013 method
+    if (scat.correction == "rotgers13") {
+      # b.nir = c.nir - a.nir
+      # 
+      # scat.factor = a.nir / b.nir
+      # 
+      # scat.factor.m = matrix(scat.factor, nrow=length(ACS$Depth), ncol=length(ACS$a.wl), byrow=F)
+      # 
+      # b_star = ACS$c.corrected - ACS$a.TScor.offset
+      # 
+      # ACS$a.corrected   = ACS$a.TScor.offset - (scat.factor.m * b_star)
+      # 
+      # ACS$scat.correction.method = "zaneveld"
+      
+    }
+    
+    
     # Zaneveld method
     if (scat.correction == "zaneveld") {
       b.nir = c.nir - a.nir
@@ -2363,9 +2614,13 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
   print("Save data into RData format: IOP, IOP.fitted.down,IOP.fitted.up")
 
-  save(IOP,file="IOP.RData")
-  save(IOP.fitted.down,file="IOP.fitted.down.RData")
-  save(IOP.fitted.up,file="IOP.fitted.up.RData")
+  # save(IOP,file=paste0("IOP_",mckee.rw,".RData"))
+  # save(IOP.fitted.down,file=paste0("IOP.fitted.down_", mckee.rw,".RData"))
+  # save(IOP.fitted.up,file=paste0("IOP.fitted.up_", mckee.rw,".RData"))
+  
+  save(IOP,file=paste0("IOP.RData"))
+  save(IOP.fitted.down,file=paste0("IOP.fitted.down.RData"))
+  save(IOP.fitted.up,file=paste0("IOP.fitted.up.RData"))
 
   # update cast.info.file
   print("UPDATING FILE: cast.info.dat")

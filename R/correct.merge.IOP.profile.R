@@ -971,7 +971,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   #Code for bias correction of ASPH
   if (instrument$ASPH == 1 ) {
     if (ASPH.biascor == TRUE) {
-      load("C:/R/Riops/data/bias.mean.RData")
+      #load(bias.mean.RData)
       print("bias file read")
       
       for (i in 1:dim(ASPH$a.corrected)[1]) {

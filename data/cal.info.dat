@@ -4,13 +4,14 @@
 #   Tref.ACS        is the temperature of pure water used by Wetlabs for the ACS calibration
 #   scat.correction is the method for the scattering correction of ACS abssorption
 #                   (eg : "mckee","zaneveld", "baseline","none")
+#   ASPH.biascor    is the TRUE/FALSE needed to correct the underestimation bias of ASPH
 #   HS6.CALYEAR     is the year of the HS6 calibration
 #   blank.ASPH      is a string for the path of the blank for ASPH
 #   blank.ACS       is a string for the path of the blank for ACS
-#   blank.BB9       is a string for the path of the blank for BB9 (if a *.dev is provided, than the BB9 raw data will be converted in calibrated data using the calibration)
-#   blank.BB3       is a string for the path of the blank for BB3 (if a *.dev is provided, than the BB3 raw data will be converted in calibrated data using the calibration)
+#   blank.BB9       is a string for the path of the blank for BB9
+#   blank.BB3       is a string for the path of the blank for BB3
 #
 #  NOTE: any field can be ommited with out problem
 ##################################################
-Tref.ASPH, Tref.ACS, scat.correction, HS6.CALYEAR, blank.ASPH, blank.ACS, blank.BB9, blank.BB3
-13.2, 20.3, "zaneveld", NA, "ASPH.blank.RData", "PurewaterCal.RData", "blank.BB9.RData","blank.BB3.RData"
+Tref.ASPH, Tref.ACS, scat.correction, ASPH.biascor, HS6.CALYEAR, blank.ASPH, blank.ACS, blank.BB9, blank.BB3
+19, 20.3, "zaneveld", FALSE, 2018, NA, "PurewaterCal.RData", "blank.BB9.RData","blank.BB3.RData"

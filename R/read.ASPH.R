@@ -29,7 +29,7 @@ read.ASPH <- function(filen, skip=0){
 
 	if (length(line) == 3) {
 	  Header <- matrix(nrow=10000, ncol=3)
-	  while (line != "character(0)"){
+	  while (any(line != "character(0)")){
 	    line = strsplit(readLines(con=id, n =1), "\t") # reads the time, depth and Vin for each records
 	    nrec <- nrec+1
 	    #print(line)

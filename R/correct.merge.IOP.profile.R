@@ -125,11 +125,13 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   if (is.null(instrument$FLCHL)) instrument$FLCHL <- 0
 
   # Check information from cal.info
-  if (!is.null(parameters$Tref.ASPH)) {
+  if (!is.null(parameters$Tref.ASPH) & !is.null(parameters$ASPH.biascor)) {
     Tref.ASPH =   parameters$Tref.ASPH
+    ASPH.biascor = parameters$ASPH.biascor
   } else {
     if (instrument$ASPH == 1) {
       print("WARNING: A-sphere calibration temperature of PW must be provided!!!")
+      print("WARNING: A-sphere acquisition bias correction must be provided!!!")
       print("Add Tref.ASPH in the cal.info.dat file")
       print("Stop processing")
       retrun(0)
@@ -965,6 +967,31 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     }
 
   }
+  
+  #Code for bias correction of ASPH
+  if (instrument$ASPH == 1 ) {
+    if (ASPH.biascor == TRUE) {
+      load("C:/R/Riops/data/bias.mean.RData")
+      print("bias file read")
+      
+      for (i in 1:dim(ASPH$a.corrected)[1]) {
+        with_bias = ASPH$a[i,]
+        temp1 = ASPH$a[i,]* ((100 + -wave.bias.mean$mean.bias)/100)
+        ASPH$a[i,] = temp1
+        no_bias = ASPH$a[i,]
+        temp2 = ASPH$a.corrected[i,]* ((100 + -wave.bias.mean$mean.bias)/100)
+        ASPH$a.corrected[i,] = temp2
+        print(paste0(100*(with_bias - no_bias)/no_bias," % ASPH bias corrected for ",
+                     ASPH$depth[i], "meters"))
+      }
+      
+      print("ASPH bias corrected")
+    } else {
+      print("ASPH bias correction is turned OFF by user")
+    }
+    
+  }
+  
 
   if (instrument$ACS ==1) {
     if (file.exists(parameters$blank.ACS)){
@@ -983,7 +1010,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
 
     #######  Apply scattering correction to ACS ####
     
-    print("Apply scattering correction to ACS absorption")
+    #print("Apply scattering correction to ACS absorption")
     ix.NIR = which(ACS$c.wl > 720)
     a.nir = apply(ACS$a.TScor.offset[,ix.NIR],1,mean, na.rm=T)
     c.nir = apply(ACS$c.corrected[,ix.NIR],1,mean, na.rm=T)
@@ -997,6 +1024,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
     # Mckee et al Opt. Express 2008 method
     if (scat.correction == "mckee08") {
       if (instrument$BB9 ==1) {
+        print("Starting Mckee et al., 2008 correction")
 
         # First correct BB9 data using ACS absorption corrected using zaneveld
         b.nir = c.nir - a.nir
@@ -1086,6 +1114,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
         ACS$a.corrected = an
         ACS$c.corrected = cn
         ACS$scat.correction.method = "mckee08"
+        print("Finishing Mckee et al., 2008 correction")
 
 
       } else {
@@ -1325,31 +1354,36 @@ correct.merge.IOP.profile <- function(instrument, parameters){
         #  } else {
         print("No backscattering measurements to apply Mckee et al method")
         print("Automatical change correction to Rotgers13 method")
-        scat.correction = "rotgers13"
+        scat.correction = "rottgers13"
         #  }
       }
       
     }
 
     # Rotgers 2013 method
-    if (scat.correction == "rotgers13") {
-      # b.nir = c.nir - a.nir
-      # 
-      # scat.factor = a.nir / b.nir
-      # 
-      # scat.factor.m = matrix(scat.factor, nrow=length(ACS$Depth), ncol=length(ACS$a.wl), byrow=F)
-      # 
-      # b_star = ACS$c.corrected - ACS$a.TScor.offset
-      # 
-      # ACS$a.corrected   = ACS$a.TScor.offset - (scat.factor.m * b_star)
-      # 
-      # ACS$scat.correction.method = "zaneveld"
+    if (scat.correction == "rottgers13") {
+      print("Applying Rottgers 2013 scattering correction to ACS absorption")
+      
+      ix.715 = which.min(abs(ACS$c.wl - 715 ))
+      a.m.715 = ACS$a.TScor.offset[,ix.715]
+      c.m.715 = ACS$c.corrected[,ix.715]
+      e_c = 0.56
+      e_c_inv = 1/e_c
+      a.715 = 0.212* a.m.715^1.135
+      
+      an = ACS$a.TScor.offset - (a.m.715 - a.715)* (((e_c_inv * ACS$c.corrected) - ACS$a.TScor.offset) / ((e_c_inv * c.m.715) - a.m.715))
+      ACS$a.corrected = an
+      ACS$scat.correction.method = "rottgers13"
+      
+      print("Finishing Rottgers et al., 2013 correction")
       
     }
     
     
     # Zaneveld method
     if (scat.correction == "zaneveld") {
+      print("Applying Zaneveld 1994 scattering correction to ACS absorption")
+      
       b.nir = c.nir - a.nir
 
       scat.factor = a.nir / b.nir
@@ -1361,6 +1395,8 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       ACS$a.corrected   = ACS$a.TScor.offset - (scat.factor.m * b_star)
 
       ACS$scat.correction.method = "zaneveld"
+      
+      print("Finishing Zaneveld 1994 scattering correction to ACS absorption")
 
     }
 
@@ -1376,8 +1412,8 @@ correct.merge.IOP.profile <- function(instrument, parameters){
       ACS$scat.correction.method = "none"
     }
 
-#    ACS$a.corrected[ACS$a.corrected < 0 ] = NA
-    ACS$a.corrected[ACS$a.corrected > 5 ] = NA
+    #ACS$a.corrected[ACS$a.corrected < 0 ] = NA
+    ACS$a.corrected[ACS$a.corrected > 8 ] = NA
     ACS$c.corrected[ACS$c.corrected < 0 ] = NA
     ACS$c.corrected[ACS$c.corrected > 50 ] = NA
 
@@ -1714,6 +1750,7 @@ correct.merge.IOP.profile <- function(instrument, parameters){
   }
   
   print(paste("Bin the data at a given depth interval:", Zint))
+  
   #######  Select the portion of the profile to retain for depth interpolation#####
   if (is.na(minx) & !is.null(CTD$Time)){
     plot(CTD$Time, CTD$Depth)

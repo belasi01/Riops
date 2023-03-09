@@ -12,5 +12,5 @@
 #
 #  NOTE: any field can be ommited with out problem
 ##################################################
-Tref.ASPH, Tref.ACS, scat.correction, HS6.CALYEAR, blank.ASPH, blank.ACS, blank.BB9, blank.BB3
-13.2, 20.3, "zaneveld", NA, "ASPH.blank.RData", "PurewaterCal.RData", "blank.BB9.RData","blank.BB3.RData"
+Tref.ASPH, Tref.ACS, scat.correction, mckee.rw, HS6.CALYEAR, blank.ASPH, blank.ACS, blank.BB9, blank.BB3
+13.2, 20.3, "zaneveld", 1, NA, "ASPH.blank.RData", "PurewaterCal.RData", "blank.BB9.RData","blank.BB3.RData"
